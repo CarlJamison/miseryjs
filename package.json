@@ -1,0 +1,14 @@
+{
+  "name": "socket-chat-example",
+  "version": "0.0.1",
+  "description": "my first socket.io app",
+  "dependencies": {
+    "express": "^4.17.1",
+    "nipplejs": "^0.9.0",
+    "nosleep.js": "^0.12.0",
+    "socket.io": "^4.2.0"
+  },
+  "scripts": {
+    "start": "node index.js"
+  }
+}
