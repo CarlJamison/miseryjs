@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+<script src="https://unpkg.com/jquery.terminal/js/jquery.terminal.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/js-confetti@latest/dist/js-confetti.browser.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/jquery.terminal/css/jquery.terminal.min.css"/>
+<script src="/socket.io/socket.io.js"></script>
+</head>
+<body style="font-size: 20px">
+    <script>
+        var socket = io("/controller");
+        var stage = 0;
+        $('body').terminal({
+            send: function(message) {
+                this.echo('Message sent');
+                socket.emit('message', message);
+                const jsConfetti = new JSConfetti()
+                jsConfetti.addConfetti()
+            },
+            brother: function() {
+                
+            }
+        }, {
+            greetings: 'Welcome to misery controller'
+        });
+        </script>
+</body>
+</html>

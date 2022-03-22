@@ -6,9 +6,6 @@ const port = process.env.PORT || 3000;
 var players = 1;
 var connList = [];
 
-app.get('/', (req, res) => {
-  res.sendFile(__dirname + '/index.html');
-});
 app.get('/controller', (req, res) => {
   res.sendFile(__dirname + '/misery-controller.html');
 });
@@ -29,7 +26,8 @@ controllers.on('connection', (socket) => {
   players++;
 
   socket.on('message', msg => {
-    clients.emit('message', playerNumber);
+    clients.emit('message', msg);
+    console.log(msg);
   });
 });
 
