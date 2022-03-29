@@ -9,11 +9,12 @@
 </head>
 <body style="display: flex; height: 100%; margin: 0;">
     <div style="flex: 50" class="cli"></div>
-    <div style="flex: 50; letter-spacing: 1.25px; padding: 16px;" class="connections"></div>
+    <div style="max-width: 50%; flex: 50; letter-spacing: 1.25px; padding: 16px;" class="connections"></div>
     <script>
+        var currentId = "";
         var socket = io("/controller");
         var stage = 0;
-        $('div.cli').terminal({
+        var terminal = $('div.cli').terminal({
             send: function(message) {
                 this.echo('Message sent');
                 socket.emit('message', message);
@@ -21,17 +22,26 @@
                 jsConfetti.addConfetti()
             }
         }, {
+            completion: true,
             greetings: 'Welcome to misery controller'
         });
+
+        
 
         socket.on("connections", connections => {
             const jsConfetti = new JSConfetti();
             jsConfetti.addConfetti();
             $("div.connections").html(connections.length + " open connections");
             connections.forEach(element => {
-                $("div.connections").append('<div style="padding: 16px; background-color: whitesmoke; border-radius: 5px; ' +
+                $("div.connections").append('<div class="connection-button" id="' + element.id +
+                '" style="padding: 16px; background-color: whitesmoke; border-radius: 5px; ' +
                 'box-shadow: darkgrey 2px 3px 8px -4px; margin-top: 16px;">' + JSON.stringify(element) + '</div>');
             });
+            $("div.connection-button").click(function(){
+                currentId = this.id;
+                terminal.set_prompt(currentId + "> ");
+            });
+
         });
         </script>
 </body>
