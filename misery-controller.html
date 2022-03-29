@@ -7,11 +7,13 @@
 <link rel="stylesheet" href="https://unpkg.com/jquery.terminal/css/jquery.terminal.min.css"/>
 <script src="/socket.io/socket.io.js"></script>
 </head>
-<body style="font-size: 20px">
+<body style="display: flex; height: 100%; margin: 0;">
+    <div style="flex: 50" class="cli"></div>
+    <div style="flex: 50; letter-spacing: 1.25px; padding: 16px;" class="connections"></div>
     <script>
         var socket = io("/controller");
         var stage = 0;
-        $('body').terminal({
+        $('div.cli').terminal({
             send: function(message) {
                 this.echo('Message sent');
                 socket.emit('message', message);
@@ -20,6 +22,16 @@
             }
         }, {
             greetings: 'Welcome to misery controller'
+        });
+
+        socket.on("connections", connections => {
+            const jsConfetti = new JSConfetti();
+            jsConfetti.addConfetti();
+            $("div.connections").html(connections.length + " open connections");
+            connections.forEach(element => {
+                $("div.connections").append('<div style="padding: 16px; background-color: whitesmoke; border-radius: 5px; ' +
+                'box-shadow: darkgrey 2px 3px 8px -4px; margin-top: 16px;">' + JSON.stringify(element) + '</div>');
+            });
         });
         </script>
 </body>

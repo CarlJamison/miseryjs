@@ -10,11 +10,13 @@ app.get('/client', (req, res) => {
   res.sendFile(__dirname + '/misery-client.html');
 });
 
+var customers = [];
+
 var controllers = io.of("/controller")
 var clients = io.of("/client")
 
 controllers.on('connection', (socket) => {
-
+  controllers.emit('connections', customers);
   socket.on('message', msg => {
     clients.emit('message', msg);
     console.log(msg);
@@ -23,7 +25,18 @@ controllers.on('connection', (socket) => {
 });
 
 clients.on('connection', (socket) => {
+  console.log("new connection: " + socket.id);
+  socket.on('register', msg => {
+    msg.id = socket.id;
+    customers.push(msg);
+    controllers.emit('connections', customers);
+  });
 
+  socket.on('disconnect', function() {
+    console.log(socket.id + " disconnected");
+    customers = customers.filter(c => c.id != socket.id);
+    controllers.emit('connections', customers);
+  });
 });
 
 http.listen(port, () => {
