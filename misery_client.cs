@@ -57,7 +57,7 @@ namespace ConsoleApp1
             return principal.IsInRole(WindowsBuiltInRole.Administrator);
         }
 
-        static Dictionary<string,string> GetSysinfo()
+        static object GetSysinfo()
         {
             string hostname = Environment.MachineName;
             string ipaddr = GetLocalIPAddress();
@@ -67,14 +67,7 @@ namespace ConsoleApp1
             string process = Process.GetCurrentProcess().ProcessName + Process.GetCurrentProcess();
             string pwd = Directory.GetCurrentDirectory();
 
-            return new Dictionary<string, string>() {
-                {"hostname", hostname},
-                {"ipaddr", ipaddr},
-                {"username", username},
-                {"pid", pid},
-                {"process", process},
-                {"pwd", pwd}
-            };
+            return new { hostname, ipaddr, username, pid, process, pwd};
         }
     }
 }
