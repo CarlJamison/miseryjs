@@ -6,6 +6,12 @@
 <script src="https://cdn.jsdelivr.net/npm/js-confetti@latest/dist/js-confetti.browser.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/jquery.terminal/css/jquery.terminal.min.css"/>
 <script src="/socket.io/socket.io.js"></script>
+<style>
+    .current-connection{
+        background-color: #005497 !important;
+        color: #d6d6d6;
+    }
+</style>
 </head>
 <body style="display: flex; height: 100%; margin: 0;">
     <div style="flex: 50" class="cli"></div>
@@ -28,7 +34,7 @@
         });
 
         socket.on("connections", connections => {
-            
+
             const jsConfetti = new JSConfetti();
             jsConfetti.addConfetti();
             $("div.connections").html(connections.length + " open connections");
@@ -40,11 +46,14 @@
                 });
 
                 $("div.connections").append(`<div class="connection-button" id="${element.id}"
-                style="padding: 16px; background-color: whitesmoke; border-radius: 5px;
+                style="padding: 16px; background-color: whitesmoke; cursor: pointer; border-radius: 5px;
                 box-shadow: darkgrey 2px 3px 8px -4px; margin-top: 16px;">${contentString}</div>`);
             });
             $("div.connection-button").click(function(){
+                
+                if(currentId && currentId.length) $(`#${currentId}`).removeClass("current-connection");
                 currentId = this.id;
+                $(`#${currentId}`).addClass("current-connection");
                 terminal.set_prompt(currentId + "> ");
             });
 
