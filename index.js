@@ -24,8 +24,8 @@ controllers.on('connection', (socket) => {
   socket.on('echo', msg => {
     var cust = customers.find(c => c.id == msg.id);
     if(cust){
-      socket.to(cust.socketId).emit("echo", socket.id, msg.message);
-      console.log(msg.message);
+      clients.to(cust.socketId).emit("echo", msg.message);
+      console.log(cust.socketId + ": " + msg.message);
     }
   });
 
