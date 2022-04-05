@@ -21,21 +21,32 @@ controllers.on('connection', (socket) => {
     clients.emit('message', msg);
     console.log(msg);
   });
+  socket.on('echo', msg => {
+    var cust = customers.find(c => c.id == msg.id);
+    if(cust){
+      socket.to(cust.socketId).emit("echo", socket.id, msg.message);
+      console.log(msg.message);
+    }
+  });
 
 });
 
 clients.on('connection', (socket) => {
   console.log("new connection: " + socket.id);
   socket.on('register', msg => {
-    msg.id = socket.id;
+    msg.socketId = socket.id;
     customers.push(msg);
     controllers.emit('connections', customers);
   });
 
   socket.on('disconnect', function() {
     console.log(socket.id + " disconnected");
-    customers = customers.filter(c => c.id != socket.id);
+    customers = customers.filter(c => c.socketId != socket.id);
     controllers.emit('connections', customers);
+  });
+
+  socket.on('echo', msg => {
+    controllers.emit('echo', msg);
   });
 });
 

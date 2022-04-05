@@ -27,10 +27,17 @@
                 socket.emit('message', message);
                 const jsConfetti = new JSConfetti()
                 jsConfetti.addConfetti()
+            },
+            echo: message => {
+                socket.emit('echo', {id: currentId, message});
             }
         }, {
             completion: true,
             greetings: 'Welcome to misery controller'
+        });
+
+        socket.on("echo", message => {
+            terminal.echo(message);
         });
 
         socket.on("connections", connections => {
