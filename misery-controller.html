@@ -14,6 +14,7 @@
         var currentId = "";
         var socket = io("/controller");
         var stage = 0;
+
         var terminal = $('div.cli').terminal({
             send: function(message) {
                 this.echo('Message sent');
@@ -26,16 +27,21 @@
             greetings: 'Welcome to misery controller'
         });
 
-        
-
         socket.on("connections", connections => {
+            
             const jsConfetti = new JSConfetti();
             jsConfetti.addConfetti();
             $("div.connections").html(connections.length + " open connections");
+
             connections.forEach(element => {
-                $("div.connections").append('<div class="connection-button" id="' + element.id +
-                '" style="padding: 16px; background-color: whitesmoke; border-radius: 5px; ' +
-                'box-shadow: darkgrey 2px 3px 8px -4px; margin-top: 16px;">' + JSON.stringify(element) + '</div>');
+                var contentString = "";
+                Object.keys(element).forEach(p => {
+                    contentString += `<div style="padding-bottom: 4px;"><span style="text-transform: capitalize">${p}: </span>${element[p]}</div>`
+                });
+
+                $("div.connections").append(`<div class="connection-button" id="${element.id}"
+                style="padding: 16px; background-color: whitesmoke; border-radius: 5px;
+                box-shadow: darkgrey 2px 3px 8px -4px; margin-top: 16px;">${contentString}</div>`);
             });
             $("div.connection-button").click(function(){
                 currentId = this.id;
