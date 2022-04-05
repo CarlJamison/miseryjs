@@ -31,12 +31,24 @@ namespace ConsoleApp1
         }
         static async void Go(string home = "http://172.16.113.1:3000/client")
         {
+            // create new socket.io client
             var client = new SocketIO(home);
-            await client.ConnectAsync();
+
+            // register all of the commands
+            client.On("echo", response =>
+            {
+                Console.WriteLine(response.ToString());
+                client.EmitAsync("echo", response.ToString());
+            });
+
+            // add an event that happens when we first connect
             client.OnConnected += (sender, e) =>
             {
                 client.EmitAsync("register", GetSysinfo());
             };
+
+            // finally, connect to the server and start the party
+            await client.ConnectAsync();
         }
         public static string GetLocalIPAddress()
         {
