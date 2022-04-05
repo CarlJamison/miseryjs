@@ -31,11 +31,12 @@ namespace ConsoleApp1
         }
         static async void Go(string home = "http://172.16.113.1:3000/client")
         {
-
             var client = new SocketIO(home);
             await client.ConnectAsync();
-
-            await client.EmitAsync("register", GetSysinfo());
+            client.OnConnected += (sender, e) =>
+            {
+                client.EmitAsync("register", GetSysinfo());
+            };
         }
         public static string GetLocalIPAddress()
         {
