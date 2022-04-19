@@ -61,15 +61,20 @@ namespace ConsoleApp1
             });
 
             // Client invoke loaded assembly (.NET DLL) // TODO: Wire this into the server, send output
-            client.On("run", response =>
+            client.On("run-task", response =>
             {
                 string[] args = response.GetValue<string[]>();
+                string assemblyName = args[0];
                 Console.WriteLine("Debg: args: ");
                 foreach (string arg in args)
                 {
                     Console.WriteLine(arg);
                 }
-                //(object obj, string output) = Invoke(args);
+                string[] assemblyArgs = args.Skip(1).Take(args.Length).ToArray(); // args[1:]
+                (object obj, string output) = Invoke(assemblyName, assemblyArgs);
+
+                Console.WriteLine(output);
+                client.EmitAsync("echo", output);
             });
 
             // add an event that happens when we first connect
@@ -81,7 +86,7 @@ namespace ConsoleApp1
             // finally, connect to the server and start the party
             await client.ConnectAsync();
         }
-        static (object, string) Invoke(string assemblyName, string[] args, string methodName = "Run")
+        static (object, string) Invoke(string assemblyName, string[] args, string methodName = "Main")
         {
             Assembly GetAssemblyByName(string name)
             {
