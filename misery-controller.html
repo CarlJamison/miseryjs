@@ -30,6 +30,9 @@
             },
             echo: message => {
                 socket.emit('echo', {id: currentId, message});
+            },
+            load: message => {
+                socket.emit('load', {id: currentId, fileName: message});
             }
         }, {
             completion: true,

@@ -1,6 +1,7 @@
 const app = require('express')();
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
+const fs = require('fs');
 const port = process.env.PORT || 3000;
 
 app.get('/controller', (req, res) => {
@@ -28,6 +29,17 @@ controllers.on('connection', (socket) => {
       console.log(cust.socketId + ": " + msg.message);
     }
   });
+
+  socket.on('load', msg => {
+    var cust = customers.find(c => c.id == msg.id);
+
+    if(cust){
+      binary = fs.readFileSync(`./${msg.fileName}`).toString('base64');
+      clients.to(cust.socketId).emit("load", binary);
+      console.log("Loaded: " + msg.fileName);
+    }
+  });
+  
 
 });
 
