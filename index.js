@@ -34,9 +34,16 @@ controllers.on('connection', (socket) => {
     var cust = customers.find(c => c.id == msg.id);
 
     if(cust){
-      binary = fs.readFileSync(`./${msg.fileName}`).toString('base64');
-      clients.to(cust.socketId).emit("load", binary);
-      console.log("Loaded: " + msg.fileName);
+      if(fs.existsSync(`./${msg.fileName}`)){
+        
+        binary = fs.readFileSync(`./${msg.fileName}`).toString('base64');
+        clients.to(cust.socketId).emit("load", binary);
+        console.log("Loaded: " + msg.fileName);
+      }else{
+        socket.emit('echo', 'File does not exist');
+      }
+    }else{
+      socket.emit('echo', 'Invalid client');
     }
   });
 
@@ -46,10 +53,10 @@ controllers.on('connection', (socket) => {
     if(cust){
       clients.to(cust.socketId).emit("run-task", msg.args);
       console.log("Ran: " + msg.args);
+    }else{
+      socket.emit('echo', 'Invalid client');
     }
   });
-  
-
 });
 
 clients.on('connection', (socket) => {

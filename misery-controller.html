@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+<title>MiseryJS</title>
 <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
 <script src="https://unpkg.com/jquery.terminal/js/jquery.terminal.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/js-confetti@latest/dist/js-confetti.browser.js"></script>
@@ -15,7 +16,7 @@
 </head>
 <body style="display: flex; height: 100%; margin: 0;">
     <div style="flex: 50" class="cli"></div>
-    <div style="max-width: 50%; flex: 50; letter-spacing: 1.25px; padding: 16px;" class="connections"></div>
+    <div style="max-width: 50%; flex: 50; letter-spacing: 1.25px; padding: 16px; background-color: whitesmoke;" class="connections"></div>
     <script>
         var currentId = "";
         var socket = io("/controller");
@@ -68,7 +69,7 @@
                 if(currentId && currentId.length) $(`#${currentId}`).removeClass("current-connection");
                 currentId = this.id;
                 $(`#${currentId}`).addClass("current-connection");
-                terminal.set_prompt(currentId + "> ");
+                terminal.set_prompt(currentId + "[[gb;red;black]>] ");
             });
 
         });
