@@ -12,6 +12,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Threading;
 
 namespace ConsoleApp1
 {
@@ -63,18 +64,8 @@ namespace ConsoleApp1
             // Client invoke loaded assembly (.NET DLL) // TODO: Wire this into the server, send output
             client.On("run-task", response =>
             {
-                string[] args = response.GetValue<string[]>();
-                string assemblyName = args[0];
-                Console.WriteLine("Debg: args: ");
-                foreach (string arg in args)
-                {
-                    Console.WriteLine(arg);
-                }
-                string[] assemblyArgs = args.Skip(1).Take(args.Length).ToArray(); // args[1:]
-                (object obj, string output) = Invoke(assemblyName, assemblyArgs);
-
-                Console.WriteLine(output);
-                client.EmitAsync("echo", output);
+                Thread myNewThread = new Thread(() => RunAndReturn(client, response));
+                myNewThread.Start();
             });
 
             // add an event that happens when we first connect
@@ -85,6 +76,17 @@ namespace ConsoleApp1
 
             // finally, connect to the server and start the party
             await client.ConnectAsync();
+        }
+        static void RunAndReturn(SocketIO client, SocketIOResponse response)
+        {
+            // Wrapper to run "Invoke" in a thread and return data to server
+            string[] args = response.GetValue<string[]>();
+            string assemblyName = args[0];
+            string[] assemblyArgs = args.Skip(1).Take(args.Length).ToArray(); // args[1:]
+
+            // do the thing
+            (object obj, string output) = Invoke(assemblyName, assemblyArgs);
+            client.EmitAsync("echo", output);
         }
         static (object, string) Invoke(string assemblyName, string[] args, string methodName = "Main")
         {
@@ -126,7 +128,6 @@ namespace ConsoleApp1
                         return (methodOutput, strOutput);
                     }
                 }
-
             }
             return (null, null); // No methodOutput or string output
         }
