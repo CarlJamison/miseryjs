@@ -39,6 +39,15 @@ controllers.on('connection', (socket) => {
       console.log("Loaded: " + msg.fileName);
     }
   });
+
+  socket.on('run', msg => {
+    var cust = customers.find(c => c.id == msg.id);
+
+    if(cust){
+      clients.to(cust.socketId).emit("run", msg);
+      console.log("Ran: " + msg.fileName);
+    }
+  });
   
 
 });

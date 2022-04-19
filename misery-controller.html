@@ -33,9 +33,15 @@
             },
             load: message => {
                 socket.emit('load', {id: currentId, fileName: message});
+            },
+            run: () => {
+                if(arguments && arguments.some()){
+                    socket.emit('run', arguments);
+                }
             }
         }, {
-            completion: true,
+            completion: true,            
+            checkArity: false,
             greetings: 'Welcome to misery controller'
         });
 
