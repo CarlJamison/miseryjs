@@ -35,8 +35,9 @@
                 socket.emit('load', {id: currentId, fileName: message});
             },
             run: () => {
-                if(arguments && arguments.some()){
-                    socket.emit('run', arguments);
+                var args = Array.prototype.slice.call(arguments);
+                if(args && args.some()){
+                    socket.emit('run', args);
                 }
             }
         }, {
