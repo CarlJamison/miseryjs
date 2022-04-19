@@ -40,12 +40,12 @@ controllers.on('connection', (socket) => {
     }
   });
 
-  socket.on('run', msg => {
+  socket.on('run-task', msg => {
     var cust = customers.find(c => c.id == msg.id);
 
     if(cust){
-      clients.to(cust.socketId).emit("run", msg);
-      console.log("Ran: " + msg.fileName);
+      clients.to(cust.socketId).emit("run-task", msg.args);
+      console.log("Ran: " + msg.args);
     }
   });
   
