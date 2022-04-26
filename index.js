@@ -61,6 +61,19 @@ controllers.on('connection', (socket) => {
 
 clients.on('connection', (socket) => {
   console.log("new connection: " + socket.id);
+
+  let startTime;
+
+  setInterval(function() {
+    startTime = Date.now();
+    socket.emit('ping');
+  }, 30000);
+
+  socket.on('pong', function() {
+    latency = Date.now() - startTime;
+    controllers.emit('latency-update', {id: socket.id, latency});
+  });
+
   socket.on('register', msg => {
     msg.socketId = socket.id;
     customers.push(msg);

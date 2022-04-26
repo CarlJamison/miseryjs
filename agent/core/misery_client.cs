@@ -47,6 +47,11 @@ namespace ConsoleApp1
                 client.EmitAsync("echo", response.ToString());
             });
 
+            client.On("ping", response =>
+            {
+                client.EmitAsync("pong");
+            });
+
             // Client load .NET assembly (dll) // TODO: Wire this into the server
             client.On("load", response =>
             {

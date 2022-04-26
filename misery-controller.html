@@ -48,6 +48,12 @@
             terminal.echo(message);
         });
 
+        socket.on("latency-update", update => {
+            $(`#latency${update.id}`).html(
+                `<div style="padding-bottom: 4px;" id="latency${update.id}"><span style="text-transform: capitalize">Latency: </span>${update.latency} ms</div>`
+            )
+        });
+
         socket.on("connections", connections => {
 
             const jsConfetti = new JSConfetti();
@@ -59,7 +65,7 @@
                 Object.keys(element).forEach(p => {
                     contentString += `<div style="padding-bottom: 4px;"><span style="text-transform: capitalize">${p}: </span>${element[p]}</div>`
                 });
-
+                contentString += `<div style="padding-bottom: 4px;" id="latency${element.socketId}"><span style="text-transform: capitalize">Latency: </span>Unknown</div>`
                 $("div.connections").append(`<div class="connection-button" id="${element.id}"
                 style="padding: 16px; background-color: whitesmoke; cursor: pointer; border-radius: 5px;
                 box-shadow: darkgrey 2px 3px 8px -4px; margin-top: 16px;">${contentString}</div>`);
