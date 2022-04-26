@@ -16,6 +16,8 @@ var customers = [];
 var controllers = io.of("/controller")
 var clients = io.of("/client")
 
+var queuedTasks = [];
+
 controllers.on('connection', (socket) => {
   controllers.emit('connections', customers);
   socket.on('message', msg => {
@@ -39,6 +41,28 @@ controllers.on('connection', (socket) => {
         binary = fs.readFileSync(`./${msg.fileName}`).toString('base64');
         clients.to(cust.socketId).emit("load", binary);
         console.log("Loaded: " + msg.fileName);
+      }else{
+        socket.emit('echo', 'File does not exist');
+      }
+    }else{
+      socket.emit('echo', 'Invalid client');
+    }
+  });
+
+  socket.on("execute-assembly", msg => {
+    var cust = customers.find(c => c.id == msg.id);
+    var fileName = msg.args[0];
+    if(cust){
+      if(fs.existsSync(`./${fileName}`)){
+        
+        binary = fs.readFileSync(`./${fileName}`).toString('base64');
+        queuedTasks.push({
+          check: "Loaded " + fileName,
+          cust: cust.socketId,
+          args: msg.args
+        })
+        clients.to(cust.socketId).emit("load", binary);
+        console.log("Loaded: " + fileName);
       }else{
         socket.emit('echo', 'File does not exist');
       }
@@ -88,6 +112,14 @@ clients.on('connection', (socket) => {
 
   socket.on('echo', msg => {
     controllers.emit('echo', msg);
+
+    var task = queuedTasks.find(t => msg == t.check && socket.id == t.cust);
+
+    if(task){
+      socket.emit("run-task", task.args);
+      console.log("Ran: " + msg.args);
+      queuedTasks = queuedTasks.filter(t => t != task);
+    }
   });
 });
 
