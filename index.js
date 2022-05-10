@@ -1,20 +1,16 @@
 const app = require('express')();
-const http = require('http').Server(app);
-const io = require('socket.io')(http);
+
+const listener = require('http').Server(app);
+const team = require('http').Server(app);
+const controllers = require('socket.io')(team);
+const clients = require('socket.io')(listener);
 const fs = require('fs');
-const port = process.env.PORT || 3000;
 
 app.get('/controller', (req, res) => {
   res.sendFile(__dirname + '/misery-controller.html');
 });
-app.get('/client', (req, res) => {
-  res.sendFile(__dirname + '/misery-client.html');
-});
 
 var customers = [];
-
-var controllers = io.of("/controller")
-var clients = io.of("/client")
 
 var queuedTasks = [];
 
@@ -123,6 +119,9 @@ clients.on('connection', (socket) => {
   });
 });
 
-http.listen(port, () => {
-  console.log(`Socket.IO server running at http://localhost:${port}/`);
+listener.listen(3000, () => {
+  console.log(`Listener server running at http://localhost:${3000}/`);
+});
+team.listen(8888, () => {
+  console.log(`Team server running at http://localhost:${8888}/`);
 });
