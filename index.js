@@ -1,12 +1,12 @@
 const app = require('express')();
-
+const teamApp = require('express')();
 const listener = require('http').Server(app);
-const team = require('http').Server(app);
+const team = require('http').Server(teamApp);
 const controllers = require('socket.io')(team);
 const clients = require('socket.io')(listener);
 const fs = require('fs');
 
-app.get('/controller', (req, res) => {
+teamApp.get('/controller', (req, res) => {
   res.sendFile(__dirname + '/misery-controller.html');
 });
 
@@ -119,9 +119,9 @@ clients.on('connection', (socket) => {
   });
 });
 
-listener.listen(3000, () => {
-  console.log(`Listener server running at http://localhost:${3000}/`);
+listener.listen(8888, () => {
+  console.log(`Listener server running at http://localhost:${8888}/`);
 });
-team.listen(8888, () => {
-  console.log(`Team server running at http://localhost:${8888}/`);
+team.listen(3000, () => {
+  console.log(`Team server running at http://localhost:${3000}/`);
 });
