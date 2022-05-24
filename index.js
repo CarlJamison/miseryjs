@@ -5,16 +5,24 @@ const team = require('http').Server(teamApp);
 const controllers = require('socket.io')(team);
 const clients = require('socket.io')(listener);
 const fs = require('fs');
+const { v4: uuidv4 } = require('uuid');
 
 teamApp.get('/controller', (req, res) => {
   res.sendFile(__dirname + '/misery-controller.html');
 });
+
+var id = uuidv4();
 
 var customers = [];
 
 var queuedTasks = [];
 
 controllers.on('connection', (socket) => {
+  if(socket.handshake.auth.token != id){
+    socket.disconnect(true);
+    return;
+  }
+
   controllers.emit('connections', customers);
   socket.on('message', msg => {
     clients.emit('message', msg);
@@ -125,3 +133,5 @@ listener.listen(8888, () => {
 team.listen(3000, () => {
   console.log(`Team server running at http://localhost:${3000}/`);
 });
+
+console.log("The super secret password is " + id);
