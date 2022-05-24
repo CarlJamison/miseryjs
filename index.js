@@ -11,6 +11,10 @@ teamApp.get('/controller', (req, res) => {
   res.sendFile(__dirname + '/misery-controller.html');
 });
 
+teamApp.get('/commands.json', (req, res) => {
+  res.sendFile(__dirname + '/commands.json');
+});
+
 var id = uuidv4();
 
 var customers = [];

@@ -22,8 +22,13 @@
         var socket = null;
         var stage = 0;
         var cCount = 0;
+        var commands = [];
 
-        var terminal = $('div.cli').terminal({
+        $.getJSON("commands.json", function(json) {
+            commands = json.commands;
+        });
+
+        var terminal = $('div.cli').terminal([{
             login: (username, password) => {
                 if(socket){
                     this.echo("connection already exists");
@@ -55,7 +60,12 @@
                 if(noConnection()) return;
                 socket.emit('execute-assembly', {id: currentId, args: args.map(a => a.toString())});
             }
-        }, {
+        }, input => {
+            var command = commands.find(c => c.name == input);
+            if(command){
+                terminal.exec(command.action);
+            }
+        }], {
             completion: true,            
             checkArity: false,
             greetings: 'Welcome to misery controller'
