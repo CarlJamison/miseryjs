@@ -24,29 +24,35 @@
         var cCount = 0;
 
         var terminal = $('div.cli').terminal({
-            login: password => {
+            login: (username, password) => {
+                if(socket){
+                    this.echo("connection already exists");
+                    return;
+                }
                 socket = io({auth: {token: password}});
                 initializeSocket();
             },
             send: function(message) {
+                if(noConnection()) return;
                 this.echo('Message sent');
                 socket.emit('message', message);
                 const jsConfetti = new JSConfetti()
                 jsConfetti.addConfetti()
             },
             echo: message => {
-                if(!socket){
-                    return;
-                }
+                if(noConnection()) return;
                 socket.emit('echo', {id: currentId, message});
             },  
             load: message => {
+                if(noConnection()) return;
                 socket.emit('load', {id: currentId, fileName: message});
             },
             run: function(...args) {
+                if(noConnection()) return;
                 socket.emit('run-task', {id: currentId, args: args.map(a => a.toString())});
             },
             execute_assembly: function(...args) {
+                if(noConnection()) return;
                 socket.emit('execute-assembly', {id: currentId, args: args.map(a => a.toString())});
             }
         }, {
@@ -54,6 +60,13 @@
             checkArity: false,
             greetings: 'Welcome to misery controller'
         });
+
+        function noConnection(){
+            if(!socket){
+                terminal.echo("no connection");
+            }
+            return !socket;
+        }
 
         function initializeSocket(){
 
