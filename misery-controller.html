@@ -22,54 +22,58 @@
         var socket = null;
         var stage = 0;
         var cCount = 0;
-        var commands = [];
+        var commands = {};
+        var terminal = null;
 
         $.getJSON("commands.json", function(json) {
-            commands = json.commands;
+            json.commands.forEach(c => {
+                commands[c.name] = function(){
+                    terminal.exec(c.action, true);
+                }
+            });
+            createTerminal();   
         });
 
-        var terminal = $('div.cli').terminal([{
-            login: (username, password) => {
-                if(socket){
-                    this.echo("connection already exists");
-                    return;
-                }
-                socket = io({auth: {token: password}});
-                initializeSocket();
-            },
-            send: function(message) {
-                if(noConnection()) return;
-                this.echo('Message sent');
-                socket.emit('message', message);
-                const jsConfetti = new JSConfetti()
-                jsConfetti.addConfetti()
-            },
-            echo: message => {
-                if(noConnection()) return;
-                socket.emit('echo', {id: currentId, message});
-            },  
-            load: message => {
-                if(noConnection()) return;
-                socket.emit('load', {id: currentId, fileName: message});
-            },
-            run: function(...args) {
-                if(noConnection()) return;
-                socket.emit('run-task', {id: currentId, args: args.map(a => a.toString())});
-            },
-            execute_assembly: function(...args) {
-                if(noConnection()) return;
-                socket.emit('execute-assembly', {id: currentId, args: args.map(a => a.toString())});
-            }
-        }, input => {
-            var command = commands.find(c => c.name == input);
-            if(command){
-                terminal.exec(command.action);
-            }
-        }], {
-            completion: true,            
-            checkArity: false,
-            greetings: 'Welcome to misery controller'
-        });
+        function createTerminal(){
+            terminal = $('div.cli').terminal({
+                login: (username, password) => {
+                    if(socket){
+                        this.echo("connection already exists");
+                        return;
+                    }
+                    socket = io({auth: {token: password}});
+                    initializeSocket();
+                },
+                send: function(message) {
+                    if(noConnection()) return;
+                    this.echo('Message sent');
+                    socket.emit('message', message);
+                    const jsConfetti = new JSConfetti()
+                    jsConfetti.addConfetti()
+                },
+                echo: message => {
+                    if(noConnection()) return;
+                    socket.emit('echo', {id: currentId, message});
+                },  
+                load: message => {
+                    if(noConnection()) return;
+                    socket.emit('load', {id: currentId, fileName: message});
+                },
+                run: function(...args) {
+                    if(noConnection()) return;
+                    socket.emit('run-task', {id: currentId, args: args.map(a => a.toString())});
+                },
+                execute_assembly: function(...args) {
+                    if(noConnection()) return;
+                    socket.emit('execute-assembly', {id: currentId, args: args.map(a => a.toString())});
+                },
+                ...commands
+            }, {
+                completion: true,            
+                checkArity: false,
+                greetings: 'Welcome to misery controller'
+            });
+        }
 
         function noConnection(){
             if(!socket){
