@@ -25,13 +25,9 @@
         var commands = {};
         var terminal = null;
 
-        $.getJSON("commands.json", function(json) {
-            json.commands.forEach(c => {
-                commands[c.name] = function(){
-                    terminal.exec(c.action, true);
-                }
-            });
-            createTerminal();   
+        $.getJSON("commands.json", json => {
+            Object.keys(json).forEach(c => commands[c] = () => terminal.exec(json[c], true));
+            createTerminal();
         });
 
         function createTerminal(){
