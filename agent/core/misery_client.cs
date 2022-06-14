@@ -20,7 +20,6 @@ using System.Management;
 
 namespace ConsoleApp1
 {
-    
     public class Program
     {
         public static void Main(string[] args)
@@ -48,7 +47,7 @@ namespace ConsoleApp1
             client.On("echo", response =>
             {
                 Console.WriteLine(response.ToString());
-                client.EmitAsync("echo", response.ToString());
+                client.EmitAsync("echo", new { returnType=0, output=response.ToString() });
             });
 
             // Client ping/pong for testing latency
@@ -101,10 +100,10 @@ namespace ConsoleApp1
             string[] assemblyArgs = args.Skip(1).Take(args.Length).ToArray(); // args[1:]
 
             // do the thing
-            (object obj, string output) = Invoke(assemblyName, assemblyArgs);
-            client.EmitAsync("echo", output);
+            (int returnType, string output) = Invoke(assemblyName, assemblyArgs);
+            client.EmitAsync("echo", new { returnType, output });
         }
-        static (object, string) Invoke(string assemblyName, string[] args, string methodName = "Main")
+        static (int, string) Invoke(string assemblyName, string[] args, string methodName = "Main")
         {
             Assembly GetAssemblyByName(string name)
             {
@@ -127,25 +126,35 @@ namespace ConsoleApp1
                         var sw = new StringWriter();
                         Console.SetOut(sw);
 
-                            object instance = Activator.CreateInstance(type);
-                            if (args.Length == 0)
-                            {
-                                methodOutput = method.Invoke(instance, new object[] { new string[0] }); // empty arguments
-                            }
-                            else
-                            {
-                                methodOutput = method.Invoke(instance, new object[] { args });
-                            }
+                        object instance = Activator.CreateInstance(type);
+                        if (args.Length == 0)
+                        {
+                            methodOutput = method.Invoke(instance, new object[] { new string[0] }); // empty arguments
+                        }
+                        else
+                        {
+                            methodOutput = method.Invoke(instance, new object[] { args });
+                        }
 
-                            //Restore output -- Stops redirecting output
-                            Console.SetOut(prevConOut);
-                            string strOutput = sw.ToString();
+                        //Restore output -- Stops redirecting output
+                        Console.SetOut(prevConOut);
+                        string strOutput = sw.ToString();
 
-                            return (methodOutput, strOutput);
+                        // Try catch this just in case the assembly we invoke doesn't have an (int) return value
+                        // otherwise the program would explode
+                        try
+                        {
+                            methodOutput = (int)methodOutput;
+                        }
+                        catch
+                        {
+                            methodOutput = 0;
+                        };
+                        return ((int)methodOutput, strOutput);
                     }
                 }
             }
-            return (null, null); // No methodOutput or string output
+            return (0, null); // No methodOutput or string output
         }
         public static string GetLocalIPAddress()
         {
@@ -179,3 +188,4 @@ namespace ConsoleApp1
         }
     }
 }
+
