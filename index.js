@@ -129,7 +129,7 @@ clients.on('connection', (socket) => {
 
     if(task){
       socket.emit("run-task", task.args);
-      console.log("Ran: " + msg.args);
+      //console.log("Ran: " + msg.args);
       queuedTasks = queuedTasks.filter(t => t != task);
     }
   });

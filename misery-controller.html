@@ -81,6 +81,26 @@
             return !socket;
         }
 
+        function b64toBlob(b64Data, contentType='image/jpeg', sliceSize=512){
+            const byteCharacters = atob(b64Data);
+            const byteArrays = [];
+
+            for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
+                const slice = byteCharacters.slice(offset, offset + sliceSize);
+
+                const byteNumbers = new Array(slice.length);
+                for (let i = 0; i < slice.length; i++) {
+                byteNumbers[i] = slice.charCodeAt(i);
+                }
+
+                const byteArray = new Uint8Array(byteNumbers);
+                byteArrays.push(byteArray);
+            }
+
+            const blob = new Blob(byteArrays, {type: contentType});
+            return blob;
+        }
+
         function initializeSocket(){
 
             socket.on("disconnect", () => {
@@ -104,7 +124,7 @@
                     downloadLink.download = currentId + Math.floor(Math.random() * 1000);
                     downloadLink.click(); 
                 }else if(message.returnType == 2){
-                    const str2blob = new Blob([message.output], { type: "image/jpeg" });
+                    const str2blob = b64toBlob(message.content);
                     var imageUrl = URL.createObjectURL(str2blob);
                     const img = $(`<img src="${imageUrl}">`);
                     terminal.echo(img);
