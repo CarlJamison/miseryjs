@@ -12,6 +12,9 @@
         background-color: #005497 !important;
         color: #d6d6d6;
     }
+    .terminal img {
+        max-width: 100%;
+    }
 </style>
 </head>
 <body style="display: flex; height: 100%; margin: 0;">
@@ -101,8 +104,10 @@
                     downloadLink.download = currentId + Math.floor(Math.random() * 1000);
                     downloadLink.click(); 
                 }else if(message.returnType == 2){
-                    //TODO display image
-                    terminal.echo("image display not supported");
+                    const str2blob = new Blob([message.output], { type: "image/jpeg" });
+                    var imageUrl = URL.createObjectURL(str2blob);
+                    const img = $(`<img src="${imageUrl}">`);
+                    terminal.echo(img);
                 }
             });
 
@@ -133,7 +138,7 @@
                     box-shadow: darkgrey 2px 3px 8px -4px; margin-top: 16px;">${contentString}</div>`);
                 });
                 $("div.connection-button").click(function(){
-                    
+
                     if(currentId && currentId.length) $(`#${currentId}`).removeClass("current-connection");
                     currentId = this.id;
                     $(`#${currentId}`).addClass("current-connection");

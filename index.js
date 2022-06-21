@@ -1,7 +1,11 @@
 const app = require('express')();
 const teamApp = require('express')();
-const listener = require('http').Server(app);
-const team = require('http').Server(teamApp);
+const listener = require('http').Server(app, {
+  maxHttpBufferSize: 1e8
+});
+const team = require('http').Server(teamApp, {
+  maxHttpBufferSize: 1e8
+});
 const controllers = require('socket.io')(team);
 const clients = require('socket.io')(listener);
 const fs = require('fs');
@@ -129,6 +133,7 @@ clients.on('connection', (socket) => {
       queuedTasks = queuedTasks.filter(t => t != task);
     }
   });
+
 });
 
 listener.listen(8888, () => {
