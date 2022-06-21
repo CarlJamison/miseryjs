@@ -86,7 +86,24 @@
             });
 
             socket.on("echo", message => {
-                terminal.echo(message);
+                //message = { content: "dGhpcyBpcyBzb21lIGJhc2U2NCB0ZXh0", returnType: 1};
+                if(message.returnType == null){
+                    terminal.echo(message);
+                }else if(message.returnType == 0){
+                    terminal.echo(message.content);
+                }else if(message.returnType == 1){
+                    const linkSource = `data:application/octet-stream;base64,${message.content}`
+                    const downloadLink = document.createElement('a');
+                    document.body.appendChild(downloadLink);
+
+                    downloadLink.href = linkSource;
+                    downloadLink.target = '_self';
+                    downloadLink.download = currentId + Math.floor(Math.random() * 1000);
+                    downloadLink.click(); 
+                }else if(message.returnType == 2){
+                    //TODO display image
+                    terminal.echo("image display not supported");
+                }
             });
 
             socket.on("latency-update", update => {
