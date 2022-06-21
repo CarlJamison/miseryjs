@@ -34,7 +34,7 @@ namespace ConsoleApp1
             }
             while (true) { };
         }
-        static async void Go(string home = "http://172.16.113.1:8888/")
+        static async void Go(string home = "http://192.168.1.8:8888/")
         {
             // create new socket.io client
             var client = new SocketIO(home);
@@ -47,7 +47,7 @@ namespace ConsoleApp1
             client.On("echo", response =>
             {
                 Console.WriteLine(response.ToString());
-                client.EmitAsync("echo", new { returnType=0, output=response.ToString() });
+                client.EmitAsync("echo", new { returnType = 0, content = response.ToString() });
             });
 
             // Client ping/pong for testing latency
@@ -100,15 +100,15 @@ namespace ConsoleApp1
             string[] assemblyArgs = args.Skip(1).Take(args.Length).ToArray(); // args[1:]
 
             // do the thing
-            (int returnType, string output) = Invoke(assemblyName, assemblyArgs);
-            client.EmitAsync("echo", new { returnType, output });
+            (int returnType, string content) = Invoke(assemblyName, assemblyArgs);
+            client.EmitAsync("echo", new { returnType, content });
         }
         static (int, string) Invoke(string assemblyName, string[] args, string methodName = "Main")
         {
             Assembly GetAssemblyByName(string name)
             {
                 return AppDomain.CurrentDomain.GetAssemblies().
-                       SingleOrDefault(_ => _.GetName().Name == name);
+                       FirstOrDefault(_ => _.GetName().Name == name);
             }
 
             Assembly assembly = GetAssemblyByName(assemblyName);
@@ -188,4 +188,3 @@ namespace ConsoleApp1
         }
     }
 }
-
