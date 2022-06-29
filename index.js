@@ -123,8 +123,13 @@ clients.on('connection', (socket) => {
   });
 
   socket.on('echo', msg => {
-    controllers.emit('echo', msg);
 
+    if(msg.returnType == 3){
+      customers.find(c => c.socketId == socket.id).pwd == msg.content;
+      controllers.emit('connections', customers);
+    }
+
+    controllers.emit('echo', msg);
     var task = queuedTasks.find(t => msg == t.check && socket.id == t.cust);
 
     if(task){
