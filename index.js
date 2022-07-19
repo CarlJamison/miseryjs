@@ -125,7 +125,7 @@ clients.on('connection', (socket) => {
   socket.on('echo', msg => {
 
     if(msg.returnType == 3){
-      customers.find(c => c.socketId == socket.id).pwd == msg.content;
+      customers.find(c => c.socketId == socket.id).pwd = msg.output;
       controllers.emit('connections', customers);
     }
 

@@ -113,9 +113,9 @@
                 if(message.returnType == null){
                     terminal.echo(message);
                 }else if(message.returnType == 0){
-                    terminal.echo(message.content);
+                    terminal.echo(message.output);
                 }else if(message.returnType == 1){
-                    const linkSource = `data:application/octet-stream;base64,${message.content}`
+                    const linkSource = `data:application/octet-stream;base64,${message.output}`
                     const downloadLink = document.createElement('a');
                     document.body.appendChild(downloadLink);
 
@@ -124,12 +124,12 @@
                     downloadLink.download = currentId + Math.floor(Math.random() * 1000);
                     downloadLink.click(); 
                 }else if(message.returnType == 2){
-                    const str2blob = b64toBlob(message.content);
+                    const str2blob = b64toBlob(message.output);
                     var imageUrl = URL.createObjectURL(str2blob);
                     const img = $(`<img src="${imageUrl}">`);
                     terminal.echo(img);
                 }else if(message.returnType == 3){
-                    terminal.echo(message.content);
+                    terminal.echo(message.output);
                 }
             });
 
