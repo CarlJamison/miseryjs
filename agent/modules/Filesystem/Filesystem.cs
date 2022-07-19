@@ -26,7 +26,26 @@ namespace Filesystem
                 Console.WriteLine("To view help for a sub-command, do Filesystem.exe <cmd> -h");
                 return 0;
             }
-            return 0;
+            string cmd = args[0];
+            args = args.Skip(1).Take(args.Length).ToArray(); // cut off the first element in the args[] array
+            switch (cmd)
+            {
+                case "Cat":
+                    return Cat(args);
+                case "Cp":
+                    return Cp(args);
+                case "Ls":
+                    return Ls(args);
+                case "Mkdir":
+                    return Mkdir(args);
+                case "Pwd":
+                    return Pwd(args);
+                case "Cd":
+                    return Cd(args);
+                default:
+                    Console.WriteLine("[!] Invalid sub-command selection: " + cmd);
+                    return 0;
+            }
         }
 
         static int Cat(string[] args)
@@ -491,6 +510,36 @@ namespace Filesystem
                 Console.WriteLine("upload <local_path> <remote_path>");
                 return 0;
             }
+            // Format for Upload: <base64 blob of binary data to be uploaded> <path to upload to>
+            byte[] data = Convert.FromBase64String(args[1]);
+            string filepath = args[0];
+            try
+            {
+                File.WriteAllBytes(filepath, data);
+                Console.WriteLine("[+] Success: Wrote " + data.Length.ToString() + " bytes to: " + args[1]);
+            }
+            catch (DirectoryNotFoundException)
+            {
+                Console.WriteLine("[!] Could not write file: " + filepath + " Required parent directory doesn't exist. Typo?");
+            }
+            catch (IOException)
+            {
+                Console.WriteLine("[!] Could not write file: " + filepath + " IOException. File locked?");
+            }
+            catch (SecurityException)
+            {
+                Console.WriteLine("[!] Could not write file: " + filepath + " SecurityException. No permissions to access file?");
+            }
+            catch (UnauthorizedAccessException)
+            {
+                Console.WriteLine("[!] Could not write file: " + filepath + " UnauthorizedAccessException. No permissions to access file?");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("[!] Unhandled Exception when creating file: " + filepath);
+                Console.Write(e);
+            }
+            return 0;
         }
 
         static int Download(string[] args)
@@ -500,7 +549,8 @@ namespace Filesystem
                 Console.WriteLine("download <remote_file>");
                 return 0;
             }
+            return 0;
+            
         }
     }
 }
-
