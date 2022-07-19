@@ -15,9 +15,9 @@ using System.IO;
 
 namespace Filesystem
 {
-    class Program
+    public class Program
     {
-        static int Main(string[] args)
+        public static int Main(string[] args)
         {
             if (args.Length == 0 || args[0] == "-h" || args[0] == "/?" || args[0] == "/h" || args[0] == "--help" || args[0] == "-help")
             {
@@ -42,6 +42,8 @@ namespace Filesystem
                     return Pwd(args);
                 case "Cd":
                     return Cd(args);
+                case "Rm":
+                    return Rm(args);
                 default:
                     Console.WriteLine("[!] Invalid sub-command selection: " + cmd);
                     return 0;
@@ -549,8 +551,39 @@ namespace Filesystem
                 Console.WriteLine("download <remote_file>");
                 return 0;
             }
+            string filepath = args[0];
+            try
+            {
+                byte[] filecontent = File.ReadAllBytes(filepath);
+                Console.WriteLine(Convert.ToBase64String(filecontent));
+                return 1; // returnType 1 = download
+            }
+            catch (DirectoryNotFoundException)
+            {
+                Console.WriteLine("[!] Could not read file: " + filepath + " File does not exist");
+            }
+            catch (FileNotFoundException)
+            {
+                Console.WriteLine("[!] Could not read file: " + filepath + " File does not exist");
+            }
+            catch (IOException)
+            {
+                Console.WriteLine("[!] Could not read file: " + filepath + " IOException. Maybe file is locked?");
+            }
+            catch (SecurityException)
+            {
+                Console.WriteLine("[!] Could not read file: " + filepath + " SecurityException. Do you have permission to read the file?");
+            }
+            catch (UnauthorizedAccessException)
+            {
+                Console.WriteLine("[!] Could not read file: " + filepath + " UnauthorizedAccessException. Do you have permission to read the file?");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("[!] Unhandled Exception when creating file: " + filepath);
+                Console.Write(e);
+            }
             return 0;
-            
         }
     }
 }
