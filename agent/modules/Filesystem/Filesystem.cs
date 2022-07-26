@@ -26,23 +26,23 @@ namespace Filesystem
                 Console.WriteLine("To view help for a sub-command, do Filesystem.exe <cmd> -h");
                 return 0;
             }
-            string cmd = args[0];
+            string cmd = args[0].ToLower();
             args = args.Skip(1).Take(args.Length).ToArray(); // cut off the first element in the args[] array
             switch (cmd)
             {
-                case "Cat":
+                case "cat":
                     return Cat(args);
-                case "Cp":
+                case "cp":
                     return Cp(args);
-                case "Ls":
+                case "ls":
                     return Ls(args);
-                case "Mkdir":
+                case "mkdir":
                     return Mkdir(args);
-                case "Pwd":
+                case "pwd":
                     return Pwd(args);
-                case "Cd":
+                case "cd":
                     return Cd(args);
-                case "Rm":
+                case "rm":
                     return Rm(args);
                 default:
                     Console.WriteLine("[!] Invalid sub-command selection: " + cmd);
