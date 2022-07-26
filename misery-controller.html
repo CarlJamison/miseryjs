@@ -18,6 +18,7 @@
 </style>
 </head>
 <body style="display: flex; height: 100%; margin: 0;">
+    <input type="file" id="file" name="file" multiple style="display:none">
     <div style="flex: 50" class="cli"></div>
     <div style="max-width: 50%; flex: 50; letter-spacing: 1.25px; padding: 16px; background-color: whitesmoke;" class="connections"></div>
     <script>
@@ -66,6 +67,18 @@
                     if(noConnection()) return;
                     socket.emit('execute-assembly', {id: currentId, args: args.map(a => a.toString())});
                 },
+                upload: function(...args) {
+                    if(noConnection()) return;
+                    var fileInput = $('#file')
+                    fileInput[0].addEventListener('change', file => {
+                        var reader = new FileReader();
+                        reader.readAsDataURL(fileInput[0].files[0]);
+                        reader.onload = () => socket.emit('run-task', 
+                            {id: currentId, args: ["Filesystem", "Upload", reader.result.split('base64,')[1], "really-cool-file"]})
+                        
+                    });
+                    fileInput.trigger('click');
+                },
                 ...commands
             }, {
                 completion: true,            
@@ -109,7 +122,6 @@
             });
 
             socket.on("echo", message => {
-                //message = { content: "dGhpcyBpcyBzb21lIGJhc2U2NCB0ZXh0", returnType: 1};
                 if(message.returnType == null){
                     terminal.echo(message);
                 }else if(message.returnType == 0){
