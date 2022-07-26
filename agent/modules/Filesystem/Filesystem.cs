@@ -517,8 +517,8 @@ namespace Filesystem
                 return 0;
             }
             // Format for Upload: <base64 blob of binary data to be uploaded> <path to upload to>
-            byte[] data = Convert.FromBase64String(args[1]);
-            string filepath = args[0];
+            byte[] data = Convert.FromBase64String(args[0]);
+            string filepath = args[1];
             try
             {
                 File.WriteAllBytes(filepath, data);
