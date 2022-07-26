@@ -44,6 +44,10 @@ namespace Filesystem
                     return Cd(args);
                 case "rm":
                     return Rm(args);
+                case "download":
+                    return Download(args);
+                case "upload":
+                    return Upload(args);
                 default:
                     Console.WriteLine("[!] Invalid sub-command selection: " + cmd);
                     return 0;
