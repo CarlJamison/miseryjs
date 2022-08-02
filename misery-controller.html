@@ -69,12 +69,23 @@
                 },
                 upload: function(...args) {
                     if(noConnection()) return;
-                    var fileInput = $('#file')
-                    fileInput[0].addEventListener('change', file => {
+                    if(!args[0]){
+                        this.echo("Expected file name")
+                        return;
+                    }
+                    var fileInput = $('#file');
+                    var hasSent = false;
+                    fileInput[0].addEventListener('input', file => {
+                        if(hasSent) return;
+                        hasSent = true;
                         var reader = new FileReader();
                         reader.readAsDataURL(fileInput[0].files[0]);
-                        reader.onload = () => socket.emit('run-task', 
-                            {id: currentId, args: ["Filesystem", "Upload", reader.result.split('base64,')[1], "really-cool-file"]})
+                        
+                        reader.onload = () => {
+                            socket.emit('run-task',  {id: currentId, args: ["Filesystem", "Upload", reader.result.split('base64,')[1], args[0]]})
+                            
+                            fileInput[0].value = '';
+                        };
                         
                     });
                     fileInput.trigger('click');
