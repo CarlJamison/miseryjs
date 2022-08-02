@@ -134,9 +134,9 @@
 
             socket.on("echo", message => {
                 if(message.returnType == null){
-                    terminal.echo(message);
+                    terminal.echo("[[b;white;black]" + message + "]");
                 }else if(message.returnType == 0){
-                    terminal.echo(message.output);
+                    terminal.echo("[[b;white;black]" + message.output + "]");
                 }else if(message.returnType == 1){
                     const linkSource = `data:application/octet-stream;base64,${message.output}`
                     const downloadLink = document.createElement('a');
@@ -152,7 +152,7 @@
                     const img = $(`<img src="${imageUrl}">`);
                     terminal.echo(img);
                 }else if(message.returnType == 3){
-                    terminal.echo(message.output);
+                    terminal.echo("[[b;white;black]" + message.output + "]");
                 }
             });
 
