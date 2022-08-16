@@ -30,9 +30,56 @@
         var terminal = null;
 
         $.getJSON("commands.json", json => {
-            Object.keys(json).forEach(c => commands[c] = () => terminal.exec(json[c], true));
+            Object.keys(json).forEach(c => commands[c] = (...args) => {
+                var alias = json[c];
+
+                if(['-h', '-help'].includes(args[0])){
+                    terminal.echo("[[b;white;black]" + alias.summary + "]");
+                    terminal.echo("[[b;blue;black]" + alias.usage + "]");
+                    return;
+                }
+
+                if(alias.depends && alias.depends.length){
+                    terminal.exec(`load agent/modules/${alias.depends}/${alias.depends}.dll`, true)
+                }
+
+                if(alias.transforms){
+                    alias.transforms.forEach(transform => {
+                        if(transform == 'file_select'){
+                            var fileInput = $('#file');
+                            var hasSent = false;
+                            fileInput[0].addEventListener('input', file => {
+                                if(hasSent) return;
+                                hasSent = true;
+                                var reader = new FileReader();
+                                reader.readAsDataURL(fileInput[0].files[0]);
+                                
+                                reader.onload = () => {
+                                    args[9] = reader.result.split('base64,')[1];
+                                    fileInput[0].value = '';
+                                    runAlias(alias, args);
+                                };
+                                
+                            });
+                            fileInput.trigger('click');
+                        }
+                    });
+                    return
+                }
+                runAlias(alias, args);
+                
+            });
             createTerminal();
         });
+
+        function runAlias(alias, args){
+            if(alias.agent_alias && alias.agent_alias.length){
+                    alias.agent_alias.forEach(com => {
+                        com = com.replace(/\{[0-9]\}/gi, p => args[+p[1]]);
+                        terminal.exec(com, true)
+                    });
+                }
+        }
 
         function createTerminal(){
             terminal = $('div.cli').terminal({

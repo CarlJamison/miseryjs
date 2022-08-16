@@ -1,1 +1,11 @@
-{ "hello-there" : "echo general kenobi" }
+{ "upload" : {
+    "depends": "Filesystem",
+    "agent_alias": ["run Filesystem Upload {9} {0}"],
+    "summary": "uploads a file",
+    "usage": "upload [filename]",
+    "transforms": ["file_select"]
+},"l" : {
+    "agent_alias": ["load agent/modules/{0}/{0}.dll"],
+    "summary": "Shorthand for Load",
+    "usage": "l [name of module]"
+} }
