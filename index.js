@@ -107,11 +107,14 @@ clients.on('connection', (socket) => {
 
   socket.on('pong', function() {
     latency = Date.now() - startTime;
-    controllers.emit('latency-update', {id: socket.id, latency});
+    
+    customers.find(c => c.socketId == socket.id).latency = latency + 'ms';
+    controllers.emit('connections', customers);
   });
 
   socket.on('register', msg => {
     msg.socketId = socket.id;
+    msg.latency = 'Unknown';
     customers.push(msg);
     controllers.emit('connections', customers);
   });
