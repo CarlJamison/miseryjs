@@ -28,6 +28,7 @@
         var cCount = 0;
         var commands = {};
         var terminal = null;
+        var existingConnections = [];
 
         $.getJSON("commands.json", json => {
             Object.keys(json).forEach(c => commands[c] = (...args) => {
@@ -161,7 +162,7 @@
 
                 const byteNumbers = new Array(slice.length);
                 for (let i = 0; i < slice.length; i++) {
-                byteNumbers[i] = slice.charCodeAt(i);
+                    byteNumbers[i] = slice.charCodeAt(i);
                 }
 
                 const byteArray = new Uint8Array(byteNumbers);
@@ -181,9 +182,9 @@
 
             socket.on("echo", message => {
                 if(message.returnType == null){
-                    terminal.echo("[[b;white;black]" + message + "]");
+                    terminal.echo("[[b;white;black]" + $.terminal.escape_brackets(message) + "]");
                 }else if(message.returnType == 0){
-                    terminal.echo("[[b;white;black]" + message.output + "]");
+                    terminal.echo("[[b;white;black]" + $.terminal.escape_brackets(message.output) + "]");
                 }else if(message.returnType == 1){
                     const linkSource = `data:application/octet-stream;base64,${message.output}`
                     const downloadLink = document.createElement('a');
