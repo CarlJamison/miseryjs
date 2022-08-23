@@ -1,3 +1,4 @@
+console.log(require('figlet').textSync('MiseryJS')) 
 const app = require('express')();
 const teamApp = require('express')();
 const listener = require('http').Server(app, {

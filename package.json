@@ -4,6 +4,7 @@
   "description": "business of misery",
   "dependencies": {
     "express": "^4.17.1",
+    "figlet": "^1.5.2",
     "socket.io": "^4.2.0",
     "uuid": "^8.3.2"
   },
