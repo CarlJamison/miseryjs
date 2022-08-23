@@ -230,8 +230,8 @@
                     $(`#${currentId}`).addClass("current-connection");
                     terminal.set_prompt(currentId + "[[gb;red;black]>] ");
                 });
-
-                $(`#${currentId}`).addClass("current-connection");
+                
+                if(currentId)  $(`#${currentId}`).addClass("current-connection");
 
             });
         }
