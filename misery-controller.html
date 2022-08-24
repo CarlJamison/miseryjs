@@ -3,6 +3,8 @@
 <head>
 <title>MiseryJS</title>
 <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
+<link rel="stylesheet" href="//code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
 <script src="https://unpkg.com/jquery.terminal/js/jquery.terminal.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/js-confetti@latest/dist/js-confetti.browser.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/jquery.terminal/css/jquery.terminal.min.css"/>
@@ -19,8 +21,8 @@
 </head>
 <body style="display: flex; height: 100%; margin: 0;">
     <input type="file" id="file" name="file" multiple style="display:none">
-    <div style="flex: 50" class="cli"></div>
-    <div style="max-width: 50%; flex: 50; letter-spacing: 1.25px; padding: 16px; background-color: whitesmoke;" class="connections"></div>
+    <div style="width: 50%" class="cli"></div>
+    <div style="flex: 50; letter-spacing: 1.25px; padding: 16px; background-color: whitesmoke;" class="connections"></div>
     <script>
         var currentId = "";
         var socket = null;
@@ -143,6 +145,9 @@
                 checkArity: false,
                 greetings: 'Welcome to misery controller'
             });
+            $('div.cli').resizable({
+                handles: 'e'
+            });
         }
 
         function noConnection(){
@@ -216,11 +221,11 @@
                 connections.forEach(element => {
                     var contentString = "";
                     Object.keys(element).forEach(p => {
-                        contentString += `<div style="padding-bottom: 4px;"><span style="text-transform: capitalize">${p}: </span>${element[p]}</div>`
+                        contentString += `<div style="padding-bottom: 4px; overflow-wrap: anywhere"><span style="text-transform: capitalize">${p}: </span>${element[p]}</div>`
                     });
                     contentString += 
                     $("div.connections").append(`<div class="connection-button" id="${element.id}"
-                    style="padding: 16px; background-color: whitesmoke; cursor: pointer; border-radius: 5px;
+                    style="padding: 16px; background-color: whitesmoke; font-size: 12px; cursor: pointer; border-radius: 5px;
                     box-shadow: darkgrey 2px 3px 8px -4px; margin-top: 16px;">${contentString}</div>`);
                 });
                 $("div.connection-button").click(function(){
@@ -230,7 +235,7 @@
                     $(`#${currentId}`).addClass("current-connection");
                     terminal.set_prompt(currentId + "[[gb;red;black]>] ");
                 });
-                
+
                 if(currentId)  $(`#${currentId}`).addClass("current-connection");
 
             });
