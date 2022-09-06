@@ -33,15 +33,12 @@ controllers.on('connection', (socket) => {
   }
 
   controllers.emit('connections', customers);
-  socket.on('message', msg => {
-    clients.emit('message', msg);
-    console.log(msg);
-  });
+
   socket.on('echo', msg => {
     var cust = customers.find(c => c.id == msg.id);
     if(cust){
       clients.to(cust.socketId).emit("echo", msg.message);
-      console.log(cust.socketId + ": " + msg.message);
+      //console.log(cust.socketId + ": " + msg.message);
     }
   });
 
@@ -101,12 +98,12 @@ clients.on('connection', (socket) => {
 
   let startTime;
 
-  setInterval(function() {
+  setInterval(() => {
     startTime = Date.now();
     socket.emit('ping');
   }, 30000);
 
-  socket.on('pong', function() {
+  socket.on('pong', () => {
     latency = Date.now() - startTime;
     
     customers.find(c => c.socketId == socket.id).latency = latency + 'ms';

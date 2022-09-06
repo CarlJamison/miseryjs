@@ -26,7 +26,6 @@
     <script>
         var currentId = "";
         var socket = null;
-        var stage = 0;
         var cCount = 0;
         var commands = {};
         var terminal = null;
@@ -76,11 +75,11 @@
 
         function runAlias(alias, args){
             if(alias.agent_alias && alias.agent_alias.length){
-                    alias.agent_alias.forEach(com => {
-                        com = com.replace(/\{[0-9]\}/gi, p => args[+p[1]]);
-                        terminal.exec(com, true)
-                    });
-                }
+                alias.agent_alias.forEach(com => {
+                    com = com.replace(/\{[0-9]\}/gi, p => args[+p[1]]);
+                    terminal.exec(com, true)
+                });
+            }
         }
 
         function createTerminal(){
@@ -92,13 +91,6 @@
                     }
                     socket = io({auth: {token: password}});
                     initializeSocket();
-                },
-                send: function(message) {
-                    if(noConnection()) return;
-                    this.echo('Message sent');
-                    socket.emit('message', message);
-                    const jsConfetti = new JSConfetti()
-                    jsConfetti.addConfetti()
                 },
                 echo: message => {
                     if(noConnection()) return;
@@ -116,38 +108,13 @@
                     if(noConnection()) return;
                     socket.emit('execute-assembly', {id: currentId, args: args.map(a => a.toString())});
                 },
-                upload: function(...args) {
-                    if(noConnection()) return;
-                    if(!args[0]){
-                        this.echo("Expected file name")
-                        return;
-                    }
-                    var fileInput = $('#file');
-                    var hasSent = false;
-                    fileInput[0].addEventListener('input', file => {
-                        if(hasSent) return;
-                        hasSent = true;
-                        var reader = new FileReader();
-                        reader.readAsDataURL(fileInput[0].files[0]);
-                        
-                        reader.onload = () => {
-                            socket.emit('run-task',  {id: currentId, args: ["Filesystem", "Upload", reader.result.split('base64,')[1], args[0]]})
-                            
-                            fileInput[0].value = '';
-                        };
-                        
-                    });
-                    fileInput.trigger('click');
-                },
                 ...commands
             }, {
                 completion: true,            
                 checkArity: false,
                 greetings: 'Welcome to misery controller'
             });
-            $('div.cli').resizable({
-                handles: 'e'
-            });
+            $('div.cli').resizable({ handles: 'e' });
         }
 
         function noConnection(){
@@ -173,8 +140,7 @@
                 byteArrays.push(byteArray);
             }
 
-            const blob = new Blob(byteArrays, {type: contentType});
-            return blob;
+            return new Blob(byteArrays, {type: contentType});
         }
 
         function initializeSocket(){
@@ -186,9 +152,9 @@
 
             socket.on("echo", message => {
                 if(message.returnType == null){
-                    terminal.echo("[[b;white;black]" + $.terminal.escape_brackets(message) + "]");
+                    terminal.echo(`[[b;white;black]${$.terminal.escape_brackets(message)}]`);
                 }else if(message.returnType == 0){
-                    terminal.echo("[[b;white;black]" + $.terminal.escape_brackets(message.output) + "]");
+                    terminal.echo(`[[b;white;black]${$.terminal.escape_brackets(message.output)}]`);
                 }else if(message.returnType == 1){
                     const linkSource = `data:application/octet-stream;base64,${message.output}`
                     const downloadLink = document.createElement('a');
@@ -204,7 +170,7 @@
                     const img = $(`<img src="${imageUrl}">`);
                     terminal.echo(img);
                 }else if(message.returnType == 3){
-                    terminal.echo("[[b;white;black]" + message.output + "]");
+                    terminal.echo(`[[b;white;black]${$.terminal.escape_brackets(message.output)}]`);
                 }
             });
 
