@@ -42,6 +42,13 @@ controllers.on('connection', (socket) => {
     }
   });
 
+  socket.on('exit', msg => {
+    var cust = customers.find(c => c.id == msg.id);
+    if(cust){
+      clients.to(cust.socketId).emit("exit");
+    }
+  });
+
   socket.on('load', msg => {
     var cust = customers.find(c => c.id == msg.id);
 

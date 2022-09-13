@@ -96,6 +96,10 @@
                     if(noConnection()) return;
                     socket.emit('echo', {id: currentId, message});
                 },  
+                exit: message => {
+                    if(noConnection()) return;
+                    socket.emit('exit', {id: currentId});
+                },  
                 load: message => {
                     if(noConnection()) return;
                     socket.emit('load', {id: currentId, fileName: message});
