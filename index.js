@@ -153,7 +153,7 @@ listener.listen(8888, () => {
   console.log(`Listener server running at http://localhost:${8888}/`);
 });
 team.listen(3000, () => {
-  console.log(`Team server running at http://localhost:${3000}/`);
+  console.log(`Team server running at http://localhost:${3000}/controller`);
 });
 
 console.log("The super secret password is " + id);
