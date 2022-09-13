@@ -12,6 +12,7 @@ using System.IO;
 // 1 = download
 // 2 = screenshot
 // 3 = set_pwd
+// 4 = processes
 
 namespace Filesystem
 {
