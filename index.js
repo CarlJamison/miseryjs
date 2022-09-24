@@ -1,6 +1,7 @@
 console.log(require('figlet').textSync('MiseryJS')) 
-const app = require('express')();
-const teamApp = require('express')();
+const express = require('express');
+const app = express();
+const teamApp = express();
 const listener = require('http').Server(app, {
   maxHttpBufferSize: 1e8
 });
@@ -10,14 +11,31 @@ const team = require('http').Server(teamApp, {
 const controllers = require('socket.io')(team);
 const clients = require('socket.io')(listener);
 const fs = require('fs');
+const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 
-teamApp.get('/controller', (req, res) => {
-  res.sendFile(__dirname + '/misery-controller.html');
+teamApp.use(express.static(__dirname + '/public'));
+
+teamApp.get('/module-scripts', (req, res) => {
+  res.status(200).send(findFiles('agent/modules', 'return-types.js'));
+});
+
+teamApp.get('/*/return-types.js', (req, res) => {
+  res.sendFile(__dirname + req.originalUrl.replace(/\?_=\d*/g, ''));
 });
 
 teamApp.get('/commands.json', (req, res) => {
-  res.sendFile(__dirname + '/commands.json');
+  var commandFiles = findFiles('agent/modules', 'commands.json');
+  var commands = JSON.parse(fs.readFileSync('/public/commands.json'));
+
+  commandFiles.forEach(f => {
+    commands = {
+      ...commands,
+      ...JSON.parse(fs.readFileSync(f))
+    };
+  });
+
+  res.status(200).send(commands);
 });
 
 var id = uuidv4();
@@ -153,7 +171,24 @@ listener.listen(8888, () => {
   console.log(`Listener server running at http://localhost:${8888}/`);
 });
 team.listen(3000, () => {
-  console.log(`Team server running at http://localhost:${3000}/controller`);
+  console.log(`Team server running at http://localhost:${3000}/`);
 });
 
 console.log("The super secret password is " + id);
+
+function findFiles(startPath,filter){
+
+  var results = [];
+
+  var files = fs.readdirSync(startPath);
+  for(var i = 0; i < files.length; i++){
+      var filename = path.join(startPath, files[i]);
+      var stat = fs.lstatSync(filename);
+      if (stat.isDirectory()){
+          results = results.concat(findFiles(filename, filter)); //recurse
+      }else if (filename.indexOf(filter)>=0) {
+          results.push(filename);
+      }
+  }
+  return results;
+}

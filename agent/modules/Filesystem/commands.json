@@ -1,0 +1,7 @@
+{"upload" : {
+    "depends": "Filesystem",
+    "agent_alias": ["run Filesystem Upload {9} {0}"],
+    "summary": "uploads a file",
+    "usage": "upload [filename]",
+    "transforms": ["file_select"]
+}}
