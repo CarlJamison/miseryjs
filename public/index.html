@@ -35,6 +35,7 @@
         var socket = null;
         var cCount = 0;
         var commands = {};
+        var transforms = {};
         var terminal = null;
 
         var tabs = $( "#tabs" ).tabs();
@@ -55,27 +56,10 @@
                 }
 
                 if(alias.transforms){
-                    alias.transforms.forEach(transform => {
-                        if(transform == 'file_select'){
-                            var fileInput = $('#file');
-                            var hasSent = false;
-                            fileInput[0].addEventListener('input', file => {
-                                if(hasSent) return;
-                                hasSent = true;
-                                var reader = new FileReader();
-                                reader.readAsDataURL(fileInput[0].files[0]);
-                                
-                                reader.onload = () => {
-                                    args[9] = reader.result.split('base64,')[1];
-                                    fileInput[0].value = '';
-                                    runAlias(alias, args);
-                                };
-                                
-                            });
-                            fileInput.trigger('click');
-                        }
-                    });
-                    return
+                    if(alias.transforms.filter(t => transforms[t]).some(transform =>
+                        transforms[transform](alias, args))){
+                        return;
+                    };
                 }
                 runAlias(alias, args);
                 
