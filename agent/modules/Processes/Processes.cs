@@ -142,56 +142,56 @@ namespace Processes
             foreach (int pid in pids)
             {
                 Process process = Process.GetProcessById(0); // fall back option so things don't break
-                string process_id = pid.ToString();
-                string processName = process.ProcessName;
+                string ProcessID = pid.ToString();
+                string Name = process.ProcessName;
                 try
                 {
                     process = Process.GetProcessById(pid);
                 }
                 catch { }
-                string strSessID;
+                string SessionID;
                 try
                 {
                     uint sessID;
                     ProcessIdToSessionId((uint)pid, out sessID);
-                    strSessID = sessID.ToString();
+                    SessionID = sessID.ToString();
                 }
                 catch (Exception)
                 {
-                    strSessID = "X";
+                    SessionID = "X";
                 }
-                string architecture;
+                string Arch;
                 try
                 {
-                    architecture = IsWin64Emulator(process) ? "x86" : "x64";
+                    Arch = IsWin64Emulator(process) ? "x86" : "x64";
                 }
                 catch (Exception)
                 {
-                    architecture = "X";
+                    Arch = "X";
                 }
-                string ppidString;
-                string userName;
+                string PPID;
+                string Owner;
                 try
                 {
-                    if (!owners.TryGetValue(process.Id, out userName))
+                    if (!owners.TryGetValue(process.Id, out Owner))
                     {
-                        userName = "X";
+                        Owner = "X";
                     }
                 }
                 catch (ArgumentNullException)
                 {
-                    userName = "X";
+                    Owner = "X";
                 }
                 try
                 {
                     Process parent = ParentProcessUtilities.GetParentProcess(process.Id);
-                    ppidString = parent.Id.ToString();
+                    PPID = parent.Id.ToString();
                 }
                 catch
                 {
-                    ppidString = "X";
+                    PPID = "X";
                 }
-                processesList.Add(new { process_id, ppidString, architecture, strSessID, userName, processName });
+                processesList.Add(new { ProcessID, PPID, Arch, SessionID, Owner, Name });
             }
             Console.WriteLine(JsonSerializer.Serialize(processesList));
             return 4; // returnType 4 = processes
@@ -307,4 +307,5 @@ namespace Processes
         }
     }
 }
+
 
