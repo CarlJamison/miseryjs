@@ -7,7 +7,7 @@ types = {
         tabContentHtml = message.output;
 
         tabs.find( ".ui-tabs-nav" ).append( li );
-        tabs.append( "<div id='" + id + "'><p>" + tabContentHtml + "</p></div>" );
+        tabs.prepend( "<div id='" + id + "'><p>" + tabContentHtml + "</p></div>" );
         tabs.tabs( "refresh" );
 
         tabCounter++;
