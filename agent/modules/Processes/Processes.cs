@@ -127,33 +127,19 @@ namespace Processes
                 owners[Convert.ToInt32(managementObject["Handle"])] = name;
             }
 
-            Process[] processes = Process.GetProcesses();
-            processes = processes.Where(e => !args.Any() || args.Any(a => e.ProcessName.Contains(a))).ToArray(); //WTF ????
-            ArrayList pidList = new ArrayList();
-            object[] pids;
-            foreach (Process process in processes)
+            var processes = Process.GetProcesses()
+                .Where(e => !args.Any() || args.Any(a => e.ProcessName.Contains(a)))
+                .OrderBy(p => p.Id)
+                .Select(process =>
             {
-                pidList.Add(process.Id);
-            }
-            pids = pidList.ToArray();
-            Array.Sort(pids);
-            List<object> processesList = new List<object>();
-            
-            foreach (int pid in pids)
-            {
-                Process process = Process.GetProcessById(0); // fall back option so things don't break
-                string ProcessID = pid.ToString();
+                string ProcessID = process.Id.ToString();
                 string Name = process.ProcessName;
-                try
-                {
-                    process = Process.GetProcessById(pid);
-                }
-                catch { }
+
                 string SessionID;
                 try
                 {
                     uint sessID;
-                    ProcessIdToSessionId((uint)pid, out sessID);
+                    ProcessIdToSessionId((uint)process.Id, out sessID);
                     SessionID = sessID.ToString();
                 }
                 catch (Exception)
@@ -191,9 +177,10 @@ namespace Processes
                 {
                     PPID = "X";
                 }
-                processesList.Add(new { ProcessID, PPID, Arch, SessionID, Owner, Name });
-            }
-            Console.WriteLine(JsonSerializer.Serialize(processesList));
+                return new { ProcessID, PPID, Arch, SessionID, Owner, Name };
+            });
+
+            Console.WriteLine(JsonSerializer.Serialize(processes));
             return 4; // returnType 4 = processes
         }
 
