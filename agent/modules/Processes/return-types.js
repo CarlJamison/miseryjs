@@ -1,10 +1,6 @@
 types = {
     ...types,
     4: message => {
-        var label = "Processes",
-        id = "tabs-" + tabCounter,
-        li = $( tabTemplate.replace( /#\{href\}/g, "#" + id ).replace( /#\{label\}/g, label ) );
-
         var content = "";
         var list = JSON.parse(message.output);
         if(list.length){
@@ -14,12 +10,8 @@ types = {
         }else{
             content = "Nothing to display";
         }
-
-        tabs.find( ".ui-tabs-nav" ).append( li );
-        tabs.prepend( "<div id='" + id + "'><p>" + content + "</p></div>" );
-        tabs.tabs( "refresh" );
-
-        tabCounter++;
+        
+        createTab("Processes", content);
     },
 }
 

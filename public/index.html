@@ -124,6 +124,10 @@
                     if(noConnection()) return;
                     socket.emit('run-task', {id: currentId, args: args.map(a => a.toString())});
                 },
+                stream: function(...args) {
+                    if(noConnection()) return;
+                    socket.emit('run-stream', {id: currentId, args: args.map(a => a.toString())});
+                },
                 execute_assembly: function(...args) {
                     if(noConnection()) return;
                     socket.emit('execute-assembly', {id: currentId, args: args.map(a => a.toString())});

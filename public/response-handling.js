@@ -52,3 +52,14 @@ function b64toBlob(b64Data, contentType='image/jpeg', sliceSize=512){
 
   return new Blob(byteArrays, {type: contentType});
 }
+
+function createTab(label, content){
+  id = "tabs-" + tabCounter,
+  li = $( tabTemplate.replace( /#\{href\}/g, "#" + id ).replace( /#\{label\}/g, label ) );
+
+  tabs.find( ".ui-tabs-nav" ).append( li );
+  tabs.prepend( "<div id='" + id + "'><p>" + content + "</p></div>" );
+  tabs.tabs( "refresh" );
+
+  tabCounter++;
+}

@@ -83,6 +83,13 @@ namespace ConsoleApp1
                 myNewThread.Start();
             });
 
+            // Client invoke loaded assembly (.NET DLL)
+            client.On("run-stream", response =>
+            {
+                Thread myNewThread = new Thread(() => RunStream(client, response));
+                myNewThread.Start();
+            });
+
             // Client invoke loaded assembly non-threaded
             client.On("run-nothread", response =>
             {
@@ -119,7 +126,29 @@ namespace ConsoleApp1
             }
             client.EmitAsync("echo", new { returnType, output });
         }
-        static (int, string) Invoke(string assemblyName, string[] args, string methodName = "Main")
+
+        static void RunStream(SocketIO client, SocketIOResponse response)
+        {
+            // Wrapper to run "Invoke" in a thread and send data to server
+            string[] args = response.GetValue<string[]>();
+            string assemblyName = args[0];
+            string[] assemblyArgs = args.Skip(1).Take(args.Length).ToArray(); // args[1:]
+
+            // do the thing
+            try
+            {
+                Invoke(assemblyName, assemblyArgs, "Stream", content => client.EmitAsync("echo", content));
+            }
+            catch (Exception e)
+            {
+                client.EmitAsync("echo", new { 
+                    returnType = 0, 
+                    output = "Error executing assembly " + assemblyName + ":\n" + e.ToString() 
+                });
+            }
+        }
+
+        static (int, string) Invoke(string assemblyName, string[] args, string methodName = "Main", Func<object, Task> callback = null)
         {
             Assembly GetAssemblyByName(string name)
             {
@@ -149,14 +178,8 @@ namespace ConsoleApp1
                         Console.SetOut(sw);
 
                         object instance = Activator.CreateInstance(type);
-                        if (args.Length == 0)
-                        {
-                            methodOutput = method.Invoke(instance, new object[] { new string[0] }); // empty arguments
-                        }
-                        else
-                        {
-                            methodOutput = method.Invoke(instance, new object[] { args });
-                        }
+                        methodOutput = method.Invoke(instance, 
+                            callback is null ? new object[] { args } : new object[] { callback });
 
                         //Restore output -- Stops redirecting output
                         Console.SetOut(prevConOut);

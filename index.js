@@ -116,6 +116,17 @@ controllers.on('connection', (socket) => {
       socket.emit('echo', 'Invalid client');
     }
   });
+
+  socket.on('run-stream', msg => {
+    var cust = customers.find(c => c.id == msg.id);
+
+    if(cust){
+      clients.to(cust.socketId).emit("run-stream", msg.args);
+      console.log("Ran: " + msg.args);
+    }else{
+      socket.emit('echo', 'Invalid client');
+    }
+  });
 });
 
 clients.on('connection', (socket) => {
@@ -126,7 +137,7 @@ clients.on('connection', (socket) => {
   setInterval(() => {
     startTime = Date.now();
     socket.emit('ping');
-  }, 30000);
+  }, 1000);
 
   socket.on('pong', () => {
     latency = Date.now() - startTime;
