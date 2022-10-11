@@ -26,8 +26,7 @@ teamApp.get('/*/return-types.js', (req, res) => {
 
 teamApp.get('/commands.json', (req, res) => {
   var commandFiles = findFiles('agent/modules', 'commands.json');
-  var commands = JSON.parse(fs.readFileSync('/public/commands.json'));
-
+  var commands = JSON.parse(fs.readFileSync('commands.json'));
   commandFiles.forEach(f => {
     commands = {
       ...commands,

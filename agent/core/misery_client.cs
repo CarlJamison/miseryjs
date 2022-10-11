@@ -178,7 +178,7 @@ namespace ConsoleApp1
                         Console.SetOut(sw);
 
                         object instance = Activator.CreateInstance(type);
-                        methodOutput = method.Invoke(instance, 
+                        methodOutput = method.Invoke(instance,
                             callback is null ? new object[] { args } : new object[] { callback });
 
                         //Restore output -- Stops redirecting output
