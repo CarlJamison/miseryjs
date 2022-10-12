@@ -20,6 +20,14 @@ using System.Management;
 
 namespace ConsoleApp1
 {
+    public class Job
+    {
+        public DateTime StartTime;
+        public string Module;
+        public string Method;
+        public int Id;
+        public Thread Thread;
+    }
     public class Program
     {
         public static void Main(string[] args)
@@ -76,18 +84,75 @@ namespace ConsoleApp1
                 }
             });
 
+            List<Job> jobs = new List<Job>();
+            int jobId = 10;
             // Client invoke loaded assembly (.NET DLL)
             client.On("run-task", response =>
             {
                 Thread myNewThread = new Thread(() => RunAndReturn(client, response));
                 myNewThread.Start();
+                jobs.Add(new Job
+                {
+                    StartTime = DateTime.Now,
+                    Module = response.GetValue<string[]>()[0],
+                    Method = "Main",
+                    Id = jobId++,
+                    Thread = myNewThread
+                });
+
             });
 
-            // Client invoke loaded assembly (.NET DLL)
             client.On("run-stream", response =>
             {
                 Thread myNewThread = new Thread(() => RunStream(client, response));
                 myNewThread.Start();
+
+                jobs.Add(new Job
+                {
+                    StartTime = DateTime.Now,
+                    Module = response.GetValue<string[]>()[0],
+                    Method = "Stream",
+                    Id = jobId++,
+                    Thread = myNewThread
+                });
+            });
+
+            client.On("list-jobs", response =>
+            {
+                jobs = jobs.Where(j => j.Thread.IsAlive).ToList();
+                
+                client.EmitAsync("echo", new
+                {
+                    returnType = 0,
+                    output = jobs.Any() ? 
+                        String.Join("\n", jobs.Select(j => $"{j.Id}\t{j.Module}\t{j.Method}\t{((int)(DateTime.Now - j.StartTime).TotalSeconds).ToString()}s" ))
+                        : "No active jobs"
+                });
+            });
+
+            client.On("kill-job", response =>
+            {
+                try
+                {
+                    int searchId = Int32.Parse(response.GetValue<string[]>()[0]);
+
+                    var job = jobs.FirstOrDefault(j => j.Id == searchId);
+
+                    if(job != null)
+                    {
+                        job.Thread.Abort();
+                        jobs.Remove(job);
+                    }
+                    else
+                    {
+                        client.EmitAsync("echo", new { returnType = 0, output = "Job not found" });
+                    }
+                }
+                catch (FormatException)
+                {
+                    client.EmitAsync("echo", new { returnType = 0, output = "Job not found" });
+                }
+
             });
 
             // Client invoke loaded assembly non-threaded
@@ -133,19 +198,23 @@ namespace ConsoleApp1
             string[] args = response.GetValue<string[]>();
             string assemblyName = args[0];
             string[] assemblyArgs = args.Skip(1).Take(args.Length).ToArray(); // args[1:]
+            string output = String.Empty;
 
             // do the thing
             try
             {
                 Invoke(assemblyName, assemblyArgs, "Stream", content => client.EmitAsync("echo", content));
             }
+            catch (ThreadAbortException e)
+            {
+                output = "Job aborted";
+            }
             catch (Exception e)
             {
-                client.EmitAsync("echo", new { 
-                    returnType = 0, 
-                    output = "Error executing assembly " + assemblyName + ":\n" + e.ToString() 
-                });
+                output = "Error executing assembly " + assemblyName + ":\n" + e.ToString();
             }
+
+            client.EmitAsync("echo", new { returnType = 0, output });
         }
 
         static (int, string) Invoke(string assemblyName, string[] args, string methodName = "Main", Func<object, Task> callback = null)
@@ -178,7 +247,7 @@ namespace ConsoleApp1
                         Console.SetOut(sw);
 
                         object instance = Activator.CreateInstance(type);
-                        methodOutput = method.Invoke(instance,
+                        methodOutput = method.Invoke(instance, 
                             callback is null ? new object[] { args } : new object[] { callback });
 
                         //Restore output -- Stops redirecting output

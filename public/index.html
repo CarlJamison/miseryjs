@@ -124,6 +124,14 @@
                     if(noConnection()) return;
                     socket.emit('run-task', {id: currentId, args: args.map(a => a.toString())});
                 },
+                list_jobs: function(...args) {
+                    if(noConnection()) return;
+                    socket.emit('list-jobs', {id: currentId, args: args.map(a => a.toString())});
+                },
+                kill_job: function(...args) {
+                    if(noConnection()) return;
+                    socket.emit('kill-job', {id: currentId, args: args.map(a => a.toString())});
+                },
                 stream: function(...args) {
                     if(noConnection()) return;
                     socket.emit('run-stream', {id: currentId, args: args.map(a => a.toString())});
