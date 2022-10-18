@@ -92,6 +92,7 @@
         function runAlias(alias, args){
             if(alias.agent_alias && alias.agent_alias.length){
                 alias.agent_alias.forEach(com => {
+                    com = com.replace("{*}", args.join(" "));
                     com = com.replace(/\{[0-9]\}/gi, p => args[+p[1]]);
                     terminal.exec(com, true)
                 });
