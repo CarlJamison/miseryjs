@@ -92,7 +92,7 @@
         function runAlias(alias, args){
             if(alias.agent_alias && alias.agent_alias.length){
                 alias.agent_alias.forEach(com => {
-                    com = com.replace(/\{.+\}/gi, p => {
+                    com = com.replace(/\{.+?\}/gi, p => {
                         if(p.length == 3){
                             return p[1] == "*" ? args.join(" ") : args[+p[1]];
                         }else if(p.length == 4){
@@ -133,19 +133,19 @@
                     if(noConnection()) return;
                     socket.emit('load', {id: currentId, fileName: message});
                 },
-                run: function(...args) {
+                run: (...args) => {
                     if(noConnection()) return;
                     socket.emit('run-task', {id: currentId, args: args.map(a => a.toString())});
                 },
-                list_jobs: function(...args) {
+                list_jobs: (...args) => {
                     if(noConnection()) return;
                     socket.emit('list-jobs', {id: currentId, args: args.map(a => a.toString())});
                 },
-                kill_job: function(...args) {
+                kill_job: (...args) => {
                     if(noConnection()) return;
                     socket.emit('kill-job', {id: currentId, args: args.map(a => a.toString())});
                 },
-                stream: function(...args) {
+                stream: (...args) => {
                     if(noConnection()) return;
                     socket.emit('run-stream', {id: currentId, args: args.map(a => a.toString())});
                 },
