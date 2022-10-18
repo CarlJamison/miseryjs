@@ -24,11 +24,11 @@ namespace Powershell
             {
                 string cmd = args[0].ToLower();
                 args = args.Skip(1).Take(args.Length).ToArray(); // cut off the first element in the args[] array
-                if(cmd == "load")
+                if (cmd == "load")
                 {
                     Psh(args[0], ps, encoded: true);
                 }
-                else if(cmd == "run")
+                else if (cmd == "run")
                 {
                     Psh(String.Join(" ", args), ps);
                 }
@@ -42,7 +42,7 @@ namespace Powershell
         private static void Psh(string script, PowerShell ps, bool encoded = false)
         {
             System.Collections.ObjectModel.Collection<PSObject> output;
-            if(encoded)
+            if (encoded)
             {
                 try
                 {
@@ -56,6 +56,7 @@ namespace Powershell
             }
             try
             {
+                Console.WriteLine(script);
                 output = ps.AddScript(script).Invoke();
             }
             catch (Exception e)
@@ -75,10 +76,13 @@ namespace Powershell
             {
                 Console.WriteLine(item.ToString());
             }
+
+            ps.Streams.Error.Clear();
+            ps.Commands.Clear(); // Reset the errors to empty so we don't get flooded with errors upon subsequent invocations
         }
         private static string Truncate(string value, int maxLength)
         {
-            if(string.IsNullOrEmpty(value)) return value;
+            if (string.IsNullOrEmpty(value)) return value;
             return value.Length <= maxLength ? value : value.Substring(0, maxLength) + "...";
         }
     }
