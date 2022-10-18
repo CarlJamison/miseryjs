@@ -56,8 +56,15 @@ namespace Powershell
             }
             try
             {
-                Console.WriteLine(script);
+                if(!encoded)
+                {
+                    Console.WriteLine($"[*] Running command (powershell) : {script} ...");
+                }
                 output = ps.AddScript(script).Invoke();
+                if (encoded)
+                {
+                    Console.WriteLine($"[+] Loaded {script.Length} byte powershell script successfully");
+                }
             }
             catch (Exception e)
             {
