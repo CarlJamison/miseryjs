@@ -1,0 +1,6 @@
+{"portscan" : {
+    "depends": "Portscan",
+    "agent_alias": ["run Portscan {*}"],
+    "summary": "Perform a TCP connect portscan on a host or range",
+    "usage": "portscan <host/IPrange> <port1,port2,port3...>"
+}}

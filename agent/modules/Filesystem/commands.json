@@ -1,7 +1,55 @@
-{"upload" : {
+{"ls" : {
+    "depends": "Filesystem",
+    "agent_alias": ["run Filesystem ls {*}"],
+    "summary": "Lists files within specified folder",
+    "usage": "ls [directory]"
+},
+"pwd" : {
+    "depends": "Filesystem",
+    "agent_alias": ["run Filesystem pwd"],
+    "summary": "Gets the agent's current directory",
+    "usage": "pwd"
+},
+"cat" : {
+    "depends": "Filesystem",
+    "agent_alias": ["run Filesystem cat {*}"],
+    "summary": "Displays the content of a remote file",
+    "usage": "cat <file> [file2 ...]"
+},
+"mkdir" : {
+    "depends": "Filesystem",
+    "agent_alias": ["run Filesystem mkdir {*}"],
+    "summary": "Creates new folder(s) on the remote host",
+    "usage": "cat <dir1> [dir22 ...]"
+},
+"rm" : {
+    "depends": "Filesystem",
+    "agent_alias": ["run Filesystem rm {*}"],
+    "summary": "Deletes folders and files on the remote host",
+    "usage": "rm <file> [dir ...]"
+},
+"cp" : {
+    "depends": "Filesystem",
+    "agent_alias": ["run Filesystem cp {*}"],
+    "summary": "Copy one file (or folder) to another",
+    "usage": "cp <source file/folder> <dest>"
+},
+"cd" : {
+    "depends": "Filesystem",
+    "agent_alias": ["run Filesystem cd {*}"],
+    "summary": "Changes the agent's current directory",
+    "usage": "cd [directory]"
+},
+"download" : {
+    "depends": "Filesystem",
+    "agent_alias": ["run Filesystem download {*}"],
+    "summary": "Downloads a file through the agent",
+    "usage": "download <filepath>"
+},
+"upload" : {
     "depends": "Filesystem",
     "agent_alias": ["run Filesystem Upload {9} {0}"],
-    "summary": "uploads a file",
+    "summary": "Uploads a file to the remote host",
     "usage": "upload [filename]",
     "transforms": ["file_select"]
 }}

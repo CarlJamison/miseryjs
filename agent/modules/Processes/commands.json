@@ -1,0 +1,12 @@
+{"ps" : {
+    "depends": "Processes",
+    "agent_alias": ["run Processes ps {*}"],
+    "summary": "Get a process listing on the remote host. Optionally, filter by name",
+    "usage": "ps [result filter string]"
+},
+"kill" : {
+    "depends": "Processes",
+    "agent_alias": ["run Processes kill {*}"],
+    "summary": "Kill one or more processes by name or PID",
+    "usage": "kill <processID/name> [processID/name ...]"
+}}
