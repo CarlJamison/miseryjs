@@ -137,6 +137,10 @@
                     if(noConnection()) return;
                     socket.emit('run-task', {id: currentId, args: args.map(a => a.toString())});
                 },
+                run_inline: (...args) => {
+                    if(noConnection()) return;
+                    socket.emit('run-inline', {id: currentId, args: args.map(a => a.toString())});
+                },
                 list_jobs: (...args) => {
                     if(noConnection()) return;
                     socket.emit('list-jobs', {id: currentId, args: args.map(a => a.toString())});

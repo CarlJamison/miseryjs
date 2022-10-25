@@ -130,6 +130,17 @@ controllers.on('connection', (socket) => {
     }
   });
 
+  socket.on('run-inline', msg => {
+    var cust = customers.find(c => c.id == msg.id);
+
+    if(cust){
+      clients.to(cust.socketId).emit("run-inline", msg.args);
+      console.log("Run-inline: " + msg.args);
+    }else{
+      socket.emit('echo', 'Invalid client');
+    }
+  });
+
   socket.on('run-stream', msg => {
     var cust = customers.find(c => c.id == msg.id);
 

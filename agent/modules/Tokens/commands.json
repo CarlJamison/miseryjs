@@ -6,7 +6,7 @@
 },
 "rev2self" : {
     "depends": "Tokens",
-    "agent_alias": ["run Tokens rev2self"],
+    "agent_alias": ["run_inline Tokens rev2self"],
     "summary": "Calls RevertToSelf API to drop impersonated token",
     "usage": "rev2self"
 },
@@ -18,19 +18,19 @@
 },
 "use_token" : {
     "depends": "Tokens",
-    "agent_alias": ["run Tokens use_token {*}"],
+    "agent_alias": ["run_inline Tokens use_token {*}"],
     "summary": "Re-impersonate a token available in the token store",
     "usage": "use_token <id>"
 },
 "make_token" : {
     "depends": "Tokens",
-    "agent_alias": ["run Tokens make_token {*}"],
+    "agent_alias": ["run_inline Tokens make_token {*}"],
     "summary": "Given valid credentials, make a new token and impersonate it",
     "usage": "make_token <domain> <username> <password>"
 },
 "steal_token" : {
     "depends": "Tokens",
-    "agent_alias": ["run Tokens steal_token {*}"],
+    "agent_alias": ["run_inline Tokens steal_token {*}"],
     "summary": "Steals a token from target process and impersonates it",
     "usage": "steal_token <pid>"
 }}
