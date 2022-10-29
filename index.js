@@ -166,8 +166,11 @@ clients.on('connection', (socket) => {
   socket.on('pong', () => {
     latency = Date.now() - startTime;
     
-    customers.find(c => c.socketId == socket.id).latency = latency + 'ms';
-    controllers.emit('connections', customers);
+    var cust = customers.find(c => c.socketId == socket.id);
+    if(cust){
+      cust.latency = latency + 'ms';
+      controllers.emit('connections', customers);
+    }
   });
 
   socket.on('register', msg => {
