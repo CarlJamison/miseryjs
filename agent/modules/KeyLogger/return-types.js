@@ -9,7 +9,7 @@ types = {
             contentHandle = $(".key-logger-content");
         }
 
-        contentHandle.append(message.output);
+        contentHandle.append($('<div/>').text(message.output).html());
     },
 }
 
