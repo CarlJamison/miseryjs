@@ -11,38 +11,13 @@
 <link rel="icon" href="/favicon.png">
 <script src="/socket.io/socket.io.js"></script>
 <script src="/response-handling.js"></script>
-<style>
-    .current-connection{
-        background-color: #005497 !important;
-        color: #d6d6d6;
-    }
-    .terminal img {
-        max-width: 100%;
-    }
-    .ui-tabs-panel {
-        flex: 100;
-        overflow-x: scroll;
-    }
-    table {
-        font-family: arial, sans-serif;
-        border-collapse: collapse;
-        width: 100%;
-    }
-    td, th {
-        border: 1px solid #dddddd;
-        text-align: left;
-        padding: 8px;
-    }
-    tr:nth-child(even) {
-        background-color: #dddddd;
-    }
-</style>
+<link rel="stylesheet" href="/styles.css">
 </head>
 <body style="display: flex; height: 100%; margin: 0;">
     <input type="file" id="file" name="file" multiple style="display:none">
     <div style="width: 50%" class="cli"></div>
     <div id="tabs" style="flex: 50; display: flex; flex-direction: column; padding: 0">
-        <div id="tabs-1" style="letter-spacing: 1.25px; padding: 16px; background-color: #9c9c9c; overflow-y: scroll;" class="connections"></div>
+        <div id="tabs-1" class="connections ui-tabs-panel"></div>
         <ul>
             <li><a href="#tabs-1">Connections</a></li>
         </ul>
@@ -135,26 +110,20 @@
                     if(noConnection()) return;
                     socket.emit('load', {id: currentId, fileName: message});
                 },
-                run: (...args) => {
-                    if(noConnection()) return;
-                    socket.emit('run-task', {id: currentId, args: args.map(a => a.toString())});
-                },
-                run_inline: (...args) => {
-                    if(noConnection()) return;
-                    socket.emit('run-inline', {id: currentId, args: args.map(a => a.toString())});
-                },
-                list_jobs: (...args) => {
-                    if(noConnection()) return;
-                    socket.emit('list-jobs', {id: currentId, args: args.map(a => a.toString())});
-                },
-                kill_job: (...args) => {
-                    if(noConnection()) return;
-                    socket.emit('kill-job', {id: currentId, args: args.map(a => a.toString())});
-                },
-                stream: (...args) => {
-                    if(noConnection()) return;
-                    socket.emit('run-stream', {id: currentId, args: args.map(a => a.toString())});
-                },
+                
+                //Simple pass through commands
+                ...[{n: "run", v: "run-task"}, 
+                {n: "run_inline", v: "run-inline"}, 
+                {n: "list_jobs", v: "list-jobs"}, 
+                {n: "kill_job", v: "kill-job"}, 
+                {n: "stream", v: "run-stream"}]
+                .reduce((result, item) => {
+                    result[item.n] = (...args) => {
+                        if(noConnection()) return;
+                        socket.emit(item.v, {id: currentId, args: args.map(a => a.toString())});
+                    }
+                    return result;
+                }, {}),
                 ...commands
             }, {
                 completion: true,            
@@ -196,9 +165,7 @@
                         contentString += `<div style="padding-bottom: 4px; overflow-wrap: anywhere"><span style="text-transform: capitalize">${p}: </span>${element[p]}</div>`
                     });
                     contentString += 
-                    $("div.connections").append(`<div class="connection-button" id="${element.id}"
-                    style="padding: 16px; background-color: whitesmoke; font-size: 12px; cursor: pointer; border-radius: 5px;
-                    box-shadow: darkgrey 2px 3px 8px -4px; margin-top: 16px;">${contentString}</div>`);
+                    $("div.connections").append(`<div class="connection-button" id="${element.id}">${contentString}</div>`);
                 });
                 $("div.connection-button").click(function(){
 
