@@ -6,11 +6,11 @@ using System.Text;
 using System.Threading.Tasks;
 using static System.Net.WebRequestMethods;
 
-namespace rickrollmodule
+namespace Program
 {
-    internal class Program
+    public class Program
     {
-        static void Main(string[] args)
+        public static void Main(string[] args)
         {
             string url = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
 
