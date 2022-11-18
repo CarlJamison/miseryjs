@@ -1,0 +1,6 @@
+{"rickroll": {
+    "depends": "Rickroll",
+    "agent_alias": ["run Rickroll {*}"],
+    "summary": "Rickrolls the client via the browser.  An additional argument will be treated as an alternative URL",
+    "usage": "Rickroll [url]"
+}}
