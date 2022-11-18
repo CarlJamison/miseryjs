@@ -1,0 +1,43 @@
+.current-connection{
+    background-color: #005497 !important;
+    color: #d6d6d6;
+}
+.terminal img {
+    max-width: 100%;
+}
+.ui-tabs-panel {
+    flex: 100;
+    overflow-x: scroll;
+}
+table {
+    font-family: arial, sans-serif;
+    border-collapse: collapse;
+    width: 100%;
+}
+td, th {
+    border: 1px solid #dddddd;
+    text-align: left;
+    padding: 8px;
+}
+tr:nth-child(even) {
+    background-color: #dddddd;
+}
+.connections.ui-tabs-panel{
+    letter-spacing: 1.25px; 
+    padding: 16px; 
+    background-color: #9c9c9c; 
+    overflow-y: scroll;
+    overflow-x: auto;
+}
+.connection-button{
+    padding: 16px; 
+    background-color: whitesmoke; 
+    font-size: 12px; 
+    cursor: pointer; 
+    border-radius: 10px;
+    box-shadow: darkgrey 2px 3px 8px -4px; 
+    margin-top: 16px;
+}
+.connection-button:hover{
+    background-color: #b8c9ed;
+}
