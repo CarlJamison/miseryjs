@@ -65,10 +65,10 @@ namespace Filesystem
                 {
                     Console.Write("Drive Name : " + objDrive.Name);
                     Console.Write("Drive Type : " + objDrive.DriveType.ToString());
-                    Console.Write("Available Free Space : " + Math.round(objDrive.AvailableFreeSpace/1000000.0, 3) + " MB");
+                    Console.Write("Available Free Space : " + Math.Round(objDrive.AvailableFreeSpace/1000000.0, 3) + " MB");
                     Console.Write("Drive Format : " + objDrive.DriveFormat);
-                    Console.Write("Total Free Space : " + Math.round(objDrive.TotalFreeSpace/1000000.0, 3) + " MB");
-                    Console.Write("Total Size : " +  Math.round(objDrive.TotalSize/1000000.0, 3) + " MB");
+                    Console.Write("Total Free Space : " + Math.Round(objDrive.TotalFreeSpace/1000000.0, 3) + " MB");
+                    Console.Write("Total Size : " +  Math.Round(objDrive.TotalSize/1000000.0, 3) + " MB");
                     Console.Write("Volume Label : " + objDrive.VolumeLabel);
                     Console.Write("------------------------------------------------------------");
                 }
