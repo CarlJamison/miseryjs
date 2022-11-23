@@ -63,19 +63,19 @@ namespace Filesystem
             {
                 foreach (DriveInfo objDrive in DriveInfo.GetDrives())
                 {
-                    Console.Write("Drive Name : " + objDrive.Name);
-                    Console.Write("Drive Type : " + objDrive.DriveType.ToString());
-                    Console.Write("Available Free Space : " + Math.Round(objDrive.AvailableFreeSpace/1000000.0, 3) + " MB");
-                    Console.Write("Drive Format : " + objDrive.DriveFormat);
-                    Console.Write("Total Free Space : " + Math.Round(objDrive.TotalFreeSpace/1000000.0, 3) + " MB");
-                    Console.Write("Total Size : " +  Math.Round(objDrive.TotalSize/1000000.0, 3) + " MB");
-                    Console.Write("Volume Label : " + objDrive.VolumeLabel);
-                    Console.Write("------------------------------------------------------------");
+                    Console.WriteLine("Drive Name : " + objDrive.Name);
+                    Console.WriteLine("Drive Type : " + objDrive.DriveType.ToString());
+                    Console.WriteLine("Available Free Space : " + Math.Round(objDrive.AvailableFreeSpace/1000000.0, 3) + " MB");
+                    Console.WriteLine("Drive Format : " + objDrive.DriveFormat);
+                    Console.WriteLine("Total Free Space : " + Math.Round(objDrive.TotalFreeSpace/1000000.0, 3) + " MB");
+                    Console.WriteLine("Total Size : " +  Math.Round(objDrive.TotalSize/1000000.0, 3) + " MB");
+                    Console.WriteLine("Volume Label : " + objDrive.VolumeLabel);
+                    Console.WriteLine("------------------------------------------------------------");
                 }
             }
             catch (Exception ex)
             {
-                Console.Write(ex.ToString());
+                Console.WriteLine(ex.ToString());
             }
             return 0;
         }
