@@ -33,6 +33,8 @@ namespace Filesystem
             {
                 case "cat":
                     return Cat(args);
+                case "drives":
+                    return Drives(args);
                 case "cp":
                     return Cp(args);
                 case "ls":
@@ -53,6 +55,29 @@ namespace Filesystem
                     Console.WriteLine("[!] Invalid sub-command selection: " + cmd);
                     return 0;
             }
+        }
+
+        static int Drives(string[] args)
+        {
+            try
+            {
+                foreach (DriveInfo objDrive in DriveInfo.GetDrives())
+                {
+                    Console.Write("Drive Name : " + objDrive.Name);
+                    Console.Write("Drive Type : " + objDrive.DriveType.ToString());
+                    Console.Write("Available Free Space : " + objDrive.AvailableFreeSpace.ToString() + "(bytes)");
+                    Console.Write("Drive Format : " + objDrive.DriveFormat);
+                    Console.Write("Total Free Space : " + objDrive.TotalFreeSpace.ToString() + "(bytes)");
+                    Console.Write("Total Size : " + objDrive.TotalSize.ToString() + "(bytes)");
+                    Console.Write("Volume Label : " + objDrive.VolumeLabel);
+                    Console.Write("------------------------------------------------------------");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.Write(ex.ToString());
+            }
+            return 0;
         }
 
         static int Cat(string[] args)
