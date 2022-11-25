@@ -1,55 +1,63 @@
-{"ls" : {
+{
+  "ls": {
     "depends": "Filesystem",
-    "agent_alias": ["run Filesystem ls {*}"],
+    "agent_alias": [ "run Filesystem ls {*}" ],
     "summary": "Lists files within specified folder",
     "usage": "ls [directory]"
-},
-"pwd" : {
+  },
+  "drives": {
     "depends": "Filesystem",
-    "agent_alias": ["run Filesystem pwd"],
+    "agent_alias": [ "run Filesystem drives" ],
+    "summary": "Lists local drives",
+    "usage": "drives"
+  },
+  "pwd": {
+    "depends": "Filesystem",
+    "agent_alias": [ "run Filesystem pwd" ],
     "summary": "Gets the agent's current directory",
     "usage": "pwd"
-},
-"cat" : {
+  },
+  "cat": {
     "depends": "Filesystem",
-    "agent_alias": ["run Filesystem cat {*}"],
+    "agent_alias": [ "run Filesystem cat {*}" ],
     "summary": "Displays the content of a remote file",
     "usage": "cat <file> [file2 ...]"
-},
-"mkdir" : {
+  },
+  "mkdir": {
     "depends": "Filesystem",
-    "agent_alias": ["run Filesystem mkdir {*}"],
+    "agent_alias": [ "run Filesystem mkdir {*}" ],
     "summary": "Creates new folder(s) on the remote host",
     "usage": "cat <dir1> [dir22 ...]"
-},
-"rm" : {
+  },
+  "rm": {
     "depends": "Filesystem",
-    "agent_alias": ["run Filesystem rm {*}"],
+    "agent_alias": [ "run Filesystem rm {*}" ],
     "summary": "Deletes folders and files on the remote host",
     "usage": "rm <file> [dir ...]"
-},
-"cp" : {
+  },
+  "cp": {
     "depends": "Filesystem",
-    "agent_alias": ["run Filesystem cp {*}"],
+    "agent_alias": [ "run Filesystem cp {*}" ],
     "summary": "Copy one file (or folder) to another",
     "usage": "cp <source file/folder> <dest>"
-},
-"cd" : {
+  },
+  "cd": {
     "depends": "Filesystem",
-    "agent_alias": ["run Filesystem cd {*}"],
+    "agent_alias": [ "run Filesystem cd {*}" ],
     "summary": "Changes the agent's current directory",
     "usage": "cd [directory]"
-},
-"download" : {
+  },
+  "download": {
     "depends": "Filesystem",
-    "agent_alias": ["run Filesystem download {*}"],
+    "agent_alias": [ "run Filesystem download {*}" ],
     "summary": "Downloads a file through the agent",
     "usage": "download <filepath>"
-},
-"upload" : {
+  },
+  "upload": {
     "depends": "Filesystem",
-    "agent_alias": ["run Filesystem Upload {9} {0}"],
+    "agent_alias": [ "run Filesystem Upload {9} {0}" ],
     "summary": "Uploads a file to the remote host",
     "usage": "upload [filename]",
-    "transforms": ["file_select"]
-}}
+    "transforms": [ "file_select" ]
+  }
+}
