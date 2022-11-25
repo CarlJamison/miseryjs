@@ -205,11 +205,13 @@ clients.on('connection', (socket) => {
 
 });
 
-listener.listen(8888, () => {
-  console.log(`Listener server running at http://localhost:${8888}/`);
+var listenerPort = process.argv[3] ?? 8888;
+var teamPort = process.argv[2] ?? 3000;
+listener.listen(listenerPort, () => {
+  console.log(`Listener server running at http://localhost:${listenerPort}/`);
 });
-team.listen(3000, () => {
-  console.log(`Team server running at http://localhost:${3000}/`);
+team.listen(teamPort, () => {
+  console.log(`Team server running at http://localhost:${teamPort}/`);
 });
 
 console.log("The super secret password is " + id);
