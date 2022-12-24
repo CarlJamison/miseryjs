@@ -115,36 +115,31 @@ namespace TcpProxy
         private void TargetRead(IAsyncResult asyncResult)
         {
             var asyncState = asyncResult.AsyncState as ClientPair;
-            if (!asyncState.disconnected)
-                if (asyncState.target.Connected)
+            if (!asyncState.disconnected && asyncState.target.Connected)
+            {
+                var count = asyncState.targetStream.EndRead(asyncResult);
+                if (count > 0)
+                {
+                    client.EmitAsync("echo", new
+                    {
+                        id = asyncState.id,
+                        data = Convert.ToBase64String(asyncState.targetBuffer.Take(count).ToArray())
+                    });
+
                     try
                     {
-                        var count = asyncState.targetStream.EndRead(asyncResult);
-                        if (count > 0) {
-                            client.EmitAsync("echo", new
-                            {
-                                id = asyncState.id,
-                                data = Convert.ToBase64String(asyncState.targetBuffer.Take(count).ToArray())
-                            });
-
-                            try
-                            {
-                                asyncState.targetStream.BeginRead(asyncState.targetBuffer, 0, asyncState.targetBuffer.Length, TargetRead, asyncState);
-                            }
-                            catch
-                            {
-                                DisconnectPair(asyncState);
-                            }
-                        }
+                        asyncState.targetStream.BeginRead(asyncState.targetBuffer, 0, asyncState.targetBuffer.Length, TargetRead, asyncState);
                     }
-                    catch (Exception ex)
+                    catch
                     {
-                        Console.WriteLine("Server disconnected '{0}'", (object)ex.Message);
+                        DisconnectPair(asyncState);
                     }
-
-            if (asyncState.disconnected)
-                return;
-            DisconnectPair(asyncState);
+                }
+                else
+                {
+                    DisconnectPair(asyncState);
+                }  
+            }  
         }
 
         private void DisconnectPair(ClientPair pair)
