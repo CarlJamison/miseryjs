@@ -1,4 +1,3 @@
-console.log(require('figlet').textSync('MiseryJS')) 
 const express = require('express');
 const app = express();
 const teamApp = express();
@@ -13,6 +12,8 @@ const clients = require('socket.io')(listener);
 const fs = require('fs');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
+
+var extensions = findFiles('agent/modules', 'server-side.js').map(file => require('./' + file));
 
 teamApp.use(express.static(__dirname + '/public'));
 
@@ -151,6 +152,17 @@ controllers.on('connection', (socket) => {
       socket.emit('echo', 'Invalid client');
     }
   });
+
+  socket.on('run-server-extension', msg => {
+    extensions.forEach(x => {
+      if(x.listeners){
+        var extMethod = x.listeners.find(l => l.name == msg.name);
+        if(extMethod){
+          extMethod.handle({customers, clients, socket}, msg);
+        }
+      }
+    })
+  });
 });
 
 clients.on('connection', (socket) => {
@@ -193,27 +205,30 @@ clients.on('connection', (socket) => {
       controllers.emit('connections', customers);
     }
 
-    controllers.emit('echo', msg);
-    var task = queuedTasks.find(t => msg == t.check && socket.id == t.cust);
+    if(extensions.every(x => 
+        !x.handles ||
+        x.handles
+        .filter(h => h.returnType == msg.returnType)
+        .every(h => h.handle(x, customers.find(c => c.socketId == socket.id).id, msg))
+      )){
+      controllers.emit('echo', msg);
+      var task = queuedTasks.find(t => msg == t.check && socket.id == t.cust);
 
-    if(task){
-      socket.emit("run-task", task.args);
-      //console.log("Ran: " + msg.args);
-      queuedTasks = queuedTasks.filter(t => t != task);
+      if(task){
+        socket.emit("run-task", task.args);
+        //console.log("Ran: " + msg.args);
+        queuedTasks = queuedTasks.filter(t => t != task);
+      }
     }
   });
 
 });
 
+console.log(require('figlet').textSync('MiseryJS'));
 var listenerPort = process.argv[3] ?? 8888;
 var teamPort = process.argv[2] ?? 3000;
-listener.listen(listenerPort, () => {
-  console.log(`Listener server running at http://localhost:${listenerPort}/`);
-});
-team.listen(teamPort, () => {
-  console.log(`Team server running at http://localhost:${teamPort}/`);
-});
-
+listener.listen(listenerPort, console.log(`Listener server running at http://localhost:${listenerPort}/`));
+team.listen(teamPort, console.log(`Team server running at http://localhost:${teamPort}/`));
 console.log("The super secret password is " + id);
 
 function findFiles(startPath,filter){
