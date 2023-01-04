@@ -12,6 +12,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace ConsoleApp1
 {
@@ -22,7 +23,7 @@ namespace ConsoleApp1
         public string Method;
         public int Id;
         public Thread Thread;
-        public Queue<JsonElement> Queue;
+        public Queue<Dictionary<string, string>> Queue;
     }
     public class Program
     {
@@ -100,8 +101,8 @@ namespace ConsoleApp1
 
             client.On("run-stream", response =>
             {
-                var queue = new Queue<JsonElement>();
-                Thread myNewThread = new Thread(() => RunStream(client, response, queue));
+                var queue = new Queue<Dictionary<string, string>>();
+                Thread myNewThread = new Thread(() => RunStream(client, response, queue, ++jobId));
                 myNewThread.Start();
 
                 jobs.Add(new Job
@@ -109,7 +110,7 @@ namespace ConsoleApp1
                     StartTime = DateTime.Now,
                     Module = response.GetValue<string[]>()[0],
                     Method = "Stream",
-                    Id = jobId++,
+                    Id = jobId,
                     Thread = myNewThread,
                     Queue = queue
                 });
@@ -130,8 +131,9 @@ namespace ConsoleApp1
 
             client.On("add-job-data", response =>
             {
-                var job_id = response.GetValue(0).GetProperty("id").GetInt32();
-                jobs.First(j => j.Id == jobId).Queue.Enqueue(response.GetValue(0));
+                var dict = JsonSerializer.Deserialize<Dictionary<string, string>>(response.GetValue(0));
+                var job_id = Int32.Parse(dict["id"]);
+                jobs.First(j => j.Id == jobId).Queue.Enqueue(dict);
             });
 
             client.On("kill-job", response =>
@@ -196,7 +198,7 @@ namespace ConsoleApp1
             client.EmitAsync("echo", new { returnType, output });
         }
 
-        static void RunStream(SocketIO client, SocketIOResponse response, Queue<JsonElement> queue)
+        static void RunStream(SocketIO client, SocketIOResponse response, Queue<Dictionary<string, string>> queue, int jobId)
         {
             // Wrapper to run "Invoke" in a thread and send data to server
             string[] args = response.GetValue<string[]>();
@@ -207,7 +209,7 @@ namespace ConsoleApp1
             // do the thing
             try
             {
-                Invoke(assemblyName, assemblyArgs, "Stream", content => client.EmitAsync("echo", content), queue);
+                Invoke(assemblyName, assemblyArgs, "Stream", content => client.EmitAsync("echo", content), queue, jobId);
             }
             catch (ThreadAbortException e)
             {
@@ -221,7 +223,7 @@ namespace ConsoleApp1
             client.EmitAsync("echo", new { returnType = 0, output });
         }
 
-        static (int, string) Invoke(string assemblyName, string[] args, string methodName = "Main", Func<object, Task> callback = null, Queue<JsonElement> queue = null)
+        static (int, string) Invoke(string assemblyName, string[] args, string methodName = "Main", Func<object, Task> callback = null, Queue<Dictionary<string, string>> queue = null, int jobId = 0)
         {
             Assembly assembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name == assemblyName);
 
@@ -244,7 +246,10 @@ namespace ConsoleApp1
                     Console.SetOut(sw);
 
                     object instance = Activator.CreateInstance(type);
-                    var input = (new object[] { args, callback, queue }).Where(p => p != null).ToArray();
+                    var inputObjects = (new object[] { args, callback, queue, jobId }).Where(p => p != null);
+                    var input = method.GetParameters()
+                        .Select(param => inputObjects.FirstOrDefault(o => o.GetType() == param.ParameterType))
+                        .ToArray();
                     methodOutput = method.Invoke(instance, input);
 
                     //Restore output -- Stops redirecting output

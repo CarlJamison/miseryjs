@@ -13,7 +13,7 @@ const fs = require('fs');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 
-var extensions = findFiles('agent/modules', 'server-side.js').map(file => require('./' + file));
+var extensions = findFiles('agent/modules', 'server-extension.js').map(file => require('./' + file));
 
 teamApp.use(express.static(__dirname + '/public'));
 
@@ -206,10 +206,9 @@ clients.on('connection', (socket) => {
     }
 
     if(extensions.every(x => 
-        !x.handles ||
-        x.handles
+        !x.handlers || x.handlers
         .filter(h => h.returnType == msg.returnType)
-        .every(h => h.handle(x, customers.find(c => c.socketId == socket.id).id, msg))
+        .every(h => h.handle({customers, clients, socket}, msg))
       )){
       controllers.emit('echo', msg);
       var task = queuedTasks.find(t => msg == t.check && socket.id == t.cust);

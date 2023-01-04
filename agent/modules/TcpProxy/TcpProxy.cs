@@ -4,7 +4,6 @@ using System.Net.Sockets;
 using System.Threading.Tasks;
 using System.Threading;
 using System.Collections.Generic;
-using System.Text.Json;
 
 namespace TcpProxy
 {
@@ -13,13 +12,22 @@ namespace TcpProxy
 
         public static int Main()
         {
-
             Console.WriteLine("Module needs to be streamed");
             return 0;
         }
 
-        public static void Stream(Func<object, Task> cb, string[] args, Queue<JsonElement> queue)
+        public static void Stream(Func<object, Task> cb, string[] args, Queue<Dictionary<string, string>> queue, int jobId)
         {
+            cb(new
+            {
+                returnType = 6,
+                output = new
+                {
+                    host = args[0],
+                    port = args[1],
+                    jobId = jobId
+                }
+            });
             while (true)
             {
                 if (queue.Any())
@@ -31,8 +39,8 @@ namespace TcpProxy
                         clientPair.cb = cb;
                         clientPair.targetHost = args[0];
                         clientPair.targetPort = int.Parse(args[1]);
-                        clientPair.message = message.GetProperty("data").ToString();
-                        clientPair.id = message.GetProperty("connection_id").ToString();
+                        clientPair.message = message["data"];
+                        clientPair.id = message["connection_id"];
                         clientPair.connectRetryCount = 0;
                         clientPair.disconnected = false;
                         clientPair.target = new TcpClient();
@@ -111,8 +119,13 @@ namespace TcpProxy
                 {
                     asyncState.cb(new
                     {
-                        asyncState.id,
-                        data = Convert.ToBase64String(asyncState.targetBuffer.Take(count).ToArray())
+                        returnType = 5,
+                        output = new {
+                            data = Convert.ToBase64String(asyncState.targetBuffer.Take(count).ToArray()),
+                            host = asyncState.targetHost,
+                            port = asyncState.targetPort,
+                            connectionId = asyncState.id,
+                        }
                     });
 
                     try
