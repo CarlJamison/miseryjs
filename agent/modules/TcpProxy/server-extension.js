@@ -48,7 +48,7 @@ module.exports = {
                 });
 
                 coolServer.server.listen(coolServer.port, () => {
-                    console.log(`TCP is initilized and running on port: ${coolServer.port}`);
+                    //scope.socket.emit('echo', `TCP is initialized and running on port: ${coolServer.port}`);
                 });
             }
         }
@@ -60,21 +60,64 @@ module.exports = {
             handle: (scope, msg) => {
                 var cust = scope.customers.find(c => c.id == msg.id);
 
+                if(Object.values(tcp_connections).find(c => c.port == msg.args[2])){
+                    scope.socket.emit('echo', 'Server already exists');
+                    return;
+                }
+
+                if(tcp_connections[`${msg.args[0]}:${msg.args[1]}-${msg.id}`]){
+                    scope.socket.emit('echo', 'Proxy already exists');
+                    return;
+                }
+
                 if(cust){
                     tcp_connections[`${msg.args[0]}:${msg.args[1]}-${msg.id}`] = {
                         port: msg.args[2],
                         connections: [],
                         jobId: null,
                         server: null,
+                        id: `${msg.args[0]}:${msg.args[1]}-${msg.id}`
                     }
                     scope.clients.to(cust.socketId).emit("run-stream", ["TcpProxy", msg.args[0], msg.args[1]]);
-                    console.log("Created TCP Server - pending initialization: " + msg.args);
                 }else{
                     scope.socket.emit('echo', 'Invalid client');
                 }
             }
+        },
+        {
+            //Create placeholder server
+            name: 'close-tcp-server',
+            handle: (scope, msg) => {
+
+                var server = Object.values(tcp_connections).find(c => c.port == msg.args[0]);
+                if(!server){
+                    scope.socket.emit('echo', 'Server does not exist');
+                    return;
+                }
+                
+                var cust = scope.customers.find(c => c.id == msg.id);
+                if(cust){
+                    scope.clients.to(cust.socketId).emit("kill-job", [server.jobId]);
+                    server.server.close();
+                    delete tcp_connections[server.id];
+                    scope.socket.emit('echo', `Server port ${msg.args[0]} closed`);
+                }else{
+                    scope.socket.emit('echo', 'Invalid client');
+                }
+            }
+        },
+        {
+            //Create placeholder server
+            name: 'get-tcp-servers',
+            handle: (scope, msg) => {
+                var connections = Object.keys(tcp_connections);
+                if(connections.length){
+                    connections.forEach(c => scope.socket.emit('echo', `${c} ${tcp_connections[c].port}`));
+                }else{
+                    scope.socket.emit('echo', 'No existing connections');
+                }
+            }
         }
-        //TODO close connection
     ]
 
 }

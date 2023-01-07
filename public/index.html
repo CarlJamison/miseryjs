@@ -65,7 +65,7 @@
         });
 
         function runAlias(alias, args){
-            Object.keys(args).forEach(k => args[k] = args[k].includes(" ") ? `\"${args[k]}\"` : args[k]);
+            Object.keys(args).forEach(k => args[k] = args[k].toString().includes(" ") ? `\"${args[k]}\"` : args[k]);
 
             if(alias.agent_alias && alias.agent_alias.length){
                 alias.agent_alias.forEach(com => {
