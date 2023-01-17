@@ -21,8 +21,9 @@ clients.on('connection', (socket) => {
 
   socket.on('echo', msg => {
     data = Buffer.from(msg.data, 'base64');
-    console.log(msg.id + "from: " + msg.data);
-    connections[msg.id].write(data);
+    console.log(msg.id + " from: ");
+    if(connections[msg.id])
+      connections[msg.id].write(data);
   });
   
   socket.on('disconnect', () => {
@@ -40,12 +41,13 @@ const server = net.createServer(tcp_sock => {
   // TCP socket recv's some data ...
   tcp_sock.on("data", (data) => {
       const strData = data.toString();
-      console.log(`TCP Server Received: ${strData}`);
+      //console.log(`TCP Server Received:` + strData);
       clients.emit("echo", { id, data: data.toString('base64') });
   });
 
   tcp_sock.on("end", () => {
       console.log("Client disconnected");
+      clients.emit("close", { id });
       connections[id] = null;
   });
 
