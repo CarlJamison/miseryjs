@@ -40,9 +40,11 @@ const server = net.createServer(tcp_sock => {
 
   // TCP socket recv's some data ...
   tcp_sock.on("data", (data) => {
-      const strData = data.toString();
+      var strData = data.toString();
+      strData = strData.replace(`localhost:${port}`, '{ClientHost}');
+
       //console.log(`TCP Server Received:` + strData);
-      clients.emit("echo", { id, data: data.toString('base64') });
+      clients.emit("echo", { id, data: Buffer.from(strData).toString('base64') });
   });
 
   tcp_sock.on("end", () => {

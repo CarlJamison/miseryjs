@@ -1,9 +1,11 @@
 using SocketIOClient;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Security;
 using System.Net.Sockets;
+using System.Text.Json;
 using System.Threading;
 
 namespace HttpsProxy
@@ -23,14 +25,14 @@ namespace HttpsProxy
             while (true) { };
         }
 
-        static async void Go(string home = "http://localHost:8000/", int targetPort = 443, string targetHost = "www.google.com")
+        static async void Go(string home = "http://localHost:8000/", int targetPort = 4000, string targetHost = "localhost")
         {
             List<Job> jobs = new List<Job>();
             var client = new SocketIO(home);
             await client.ConnectAsync();
             client.On("echo", response =>
             {
-                Thread myNewThread = new Thread(() => OpenConnection(client, response, targetPort, targetHost));
+                Thread myNewThread = new Thread(() => OpenConnection(client, response.GetValue(0), targetPort, targetHost));
                 myNewThread.Start();
                 jobs.Add(new Job
                 {
@@ -51,35 +53,43 @@ namespace HttpsProxy
             });
         }
 
-        private static void OpenConnection(SocketIO client, SocketIOResponse response, int targetPort, string targetHost)
+        private static void OpenConnection(SocketIO client, JsonElement response, int targetPort, string targetHost)
         {
             try
             {
                 TcpClient tcpClient = new TcpClient();
                 tcpClient.Connect(targetHost, targetPort);
-                NetworkStream netStream = tcpClient.GetStream();
-                var coolString = System.Text.Encoding.UTF8.GetString(
-                    Convert.FromBase64String(
-                    response.GetValue(0).GetProperty("data").ToString()));
+                Stream networkStream = null;
 
-                coolString = coolString.Replace("localhost:5000", targetHost);
+                if(targetPort == 443)
+                {
+                    var coolSSLThing = new SslStream(tcpClient.GetStream());
+                    coolSSLThing.AuthenticateAsClient(targetHost);
+                    networkStream = coolSSLThing;
+                }
+                else
+                {
+                    networkStream = tcpClient.GetStream();
+                }
 
-                var sendBytes = System.Text.Encoding.UTF8.GetBytes(coolString);
-                Console.WriteLine(coolString);
+                var bytes = Convert.FromBase64String(response.GetProperty("data").ToString());
 
-                var networkStream = new SslStream(netStream);
-                networkStream.AuthenticateAsClient(targetHost);
-                networkStream.Write(sendBytes, 0, sendBytes.Length);
+                if (targetPort == 443 || targetPort == 80)
+                {
+                    var coolString = System.Text.Encoding.UTF8.GetString(bytes).Replace("{ClientHost}", targetHost);
+                    bytes = System.Text.Encoding.UTF8.GetBytes(coolString);
+                }
+
+                networkStream.Write(bytes, 0, bytes.Length);
 
                 var targetBuffer = new byte[65536];
 
                 while (tcpClient.Connected)
                 {
                     var count = networkStream.Read(targetBuffer, 0, targetBuffer.Length);
-                    Console.WriteLine("Response Received");
                     client.EmitAsync("echo", new
                     {
-                        id = response.GetValue(0).GetProperty("id").GetInt32(),
+                        id = response.GetProperty("id").GetInt32(),
                         data = Convert.ToBase64String(targetBuffer.Take(count).ToArray())
                     });
                 }
