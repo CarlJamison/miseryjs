@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections;
 using System.Security;
@@ -51,6 +51,8 @@ namespace Filesystem
                     return Download(args);
                 case "upload":
                     return Upload(args);
+                case "tree":
+                    return Tree(args);
                 default:
                     Console.WriteLine("[!] Invalid sub-command selection: " + cmd);
                     return 0;
@@ -65,10 +67,10 @@ namespace Filesystem
                 {
                     Console.WriteLine("Drive Name : " + objDrive.Name);
                     Console.WriteLine("Drive Type : " + objDrive.DriveType.ToString());
-                    Console.WriteLine("Available Free Space : " + Math.Round(objDrive.AvailableFreeSpace/1000000.0, 3) + " MB");
+                    Console.WriteLine("Available Free Space : " + Math.Round(objDrive.AvailableFreeSpace / 1000000.0, 3) + " MB");
                     Console.WriteLine("Drive Format : " + objDrive.DriveFormat);
-                    Console.WriteLine("Total Free Space : " + Math.Round(objDrive.TotalFreeSpace/1000000.0, 3) + " MB");
-                    Console.WriteLine("Total Size : " +  Math.Round(objDrive.TotalSize/1000000.0, 3) + " MB");
+                    Console.WriteLine("Total Free Space : " + Math.Round(objDrive.TotalFreeSpace / 1000000.0, 3) + " MB");
+                    Console.WriteLine("Total Size : " + Math.Round(objDrive.TotalSize / 1000000.0, 3) + " MB");
                     Console.WriteLine("Volume Label : " + objDrive.VolumeLabel);
                     Console.WriteLine("------------------------------------------------------------");
                 }
@@ -614,6 +616,83 @@ namespace Filesystem
                 Console.Write(e);
             }
             return 0;
+        }
+
+        static int Tree(string[] args)
+        {
+            string path;
+            if (args.Length == 0)
+            {
+                path = ".";
+            }
+            else if (args[0] == "-h" || args[0] == "/?" || args[0] == "/h" || args[0] == "--help" || args[0] == "-help")
+            {
+                Console.WriteLine("tree [dir (leave blank for current dir)]");
+                return 0;
+            }
+            else
+            {
+                path = args[0];
+            }
+            System.Collections.Specialized.StringCollection log = new System.Collections.Specialized.StringCollection();
+            DirectoryInfo directoryInfo = new DirectoryInfo(path);
+            Console.WriteLine(".");
+            string tab = "    ";
+            string prefix = "└── ";
+            PrintTree(directoryInfo);
+
+            if (log.Count > 0)
+            {
+                Console.WriteLine("Tree was unable to access these files:");
+                foreach (string s in log)
+                {
+                    Console.WriteLine(s);
+                }
+            }
+            return 0;
+
+            void PrintTree(DirectoryInfo workingDirectory)
+            {
+                FileInfo[] files = null;
+                DirectoryInfo[] subDirs = null;
+
+                try
+                {
+                    files = workingDirectory.GetFiles("*.*");
+                    subDirs = workingDirectory.GetDirectories();
+
+                }
+                catch (UnauthorizedAccessException e)
+                {
+                    log.Add(e.Message);
+                }
+                catch (DirectoryNotFoundException e)
+                {
+                    Console.WriteLine(e.Message);
+                }
+                catch (IOException e)
+                {
+                    log.Add("IOException: " + e.Message);
+                }
+
+                if (files != null)
+                {
+                    //print all the files in the directory
+                    foreach (FileInfo fi in files)
+                    {
+                        Console.WriteLine(prefix + fi.Name);
+                    }
+
+                    foreach (DirectoryInfo di in subDirs)
+                    {
+                        Console.WriteLine(prefix + di.Name);
+                        // Resursive call for each subdirectory.
+                        prefix = tab + prefix;
+                        PrintTree(di);
+                        prefix = prefix.Remove(0, 4);
+                    }
+                }
+            }
         }
     }
 }

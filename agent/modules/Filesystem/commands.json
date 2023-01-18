@@ -59,5 +59,11 @@
     "summary": "Uploads a file to the remote host",
     "usage": "upload [filename]",
     "transforms": [ "file_select" ]
+  },
+  "tree": {
+    "depends": "Filesystem",
+    "agent_alias": [ "run Filesystem tree {*}" ],
+    "summary": "Recursively display a directory and its subdirectories.",
+    "usage": "tree [directory]"
   }
 }
