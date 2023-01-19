@@ -10,7 +10,10 @@ module.exports = {
                 var cust = scope.customers.find(c => c.socketId == scope.socket.id);
                 data = Buffer.from(message.output.data, 'base64');
                 var serverId = `${message.output.host}:${message.output.port}-${cust.id}`;
-                tcp_connections[serverId].connections[message.output.connectionId].write(data);
+                var connection = tcp_connections[serverId].connections[message.output.connectionId];
+                if(connection){
+                    connection.write(data);
+                }
                 return false;
             }
         },
@@ -36,14 +39,21 @@ module.exports = {
                     coolServer.connections[id] = tcp_sock;
 
                     tcp_sock.on("data", data => {
+                        var strData = data.toString();
+                        strData = strData.replace(`localhost:${coolServer.port}`, '{ClientHost}');
+
                         scope.clients.to(cust.socketId).emit("add-job-data", { 
                             id: coolServer.jobId.toString(),
                             connection_id: id, 
-                            data: data.toString('base64') });
+                            data: Buffer.from(strData).toString('base64') });
                     });
                 
                     tcp_sock.on("end", () => {
                         tcp_connections[serverId].connections[id] = null;
+                        scope.clients.to(cust.socketId).emit("add-job-data", { 
+                            id: coolServer.jobId.toString(),
+                            connection_id: id,
+                        });
                     });
                 });
 

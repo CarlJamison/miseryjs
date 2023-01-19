@@ -4,6 +4,8 @@ using System.Net.Sockets;
 using System.Threading.Tasks;
 using System.Threading;
 using System.Collections.Generic;
+using System.IO;
+using System.Net.Security;
 
 namespace TcpProxy
 {
@@ -18,13 +20,16 @@ namespace TcpProxy
 
         public static void Stream(Func<object, Task> cb, string[] args, Queue<Dictionary<string, string>> queue, int jobId)
         {
+            var targetHost = args[0];
+            var targetPort = int.Parse(args[1]);
+            List<Job> jobs = new List<Job>();
             cb(new
             {
                 returnType = 6,
                 output = new
                 {
-                    host = args[0],
-                    port = args[1],
+                    host = targetHost,
+                    port = targetPort,
                     jobId = jobId
                 }
             });
@@ -33,170 +38,100 @@ namespace TcpProxy
                 if (queue.Any())
                 {
                     var message = queue.Dequeue();
-                    var clientPair = new ClientPair();
-                    try
+
+                    if (message.ContainsKey("data"))
                     {
-                        clientPair.cb = cb;
-                        clientPair.targetHost = args[0];
-                        clientPair.targetPort = int.Parse(args[1]);
-                        clientPair.message = message["data"];
-                        clientPair.id = message["connection_id"];
-                        clientPair.connectRetryCount = 0;
-                        clientPair.disconnected = false;
-                        clientPair.target = new TcpClient();
-                        clientPair.target.BeginConnect(clientPair.targetHost, clientPair.targetPort, TargetConnect, clientPair);
+
+                        Thread myNewThread = new Thread(() => OpenConnection(cb, message, targetPort, targetHost));
+                        myNewThread.Start();
+
+                        jobs.Add(new Job
+                        {
+                            Id = message["connection_id"],
+                            Thread = myNewThread
+                        });
                     }
-                    catch (Exception ex)
+                    else
                     {
-                        Console.WriteLine("Failed when trying to accept new clients with '{0}'", (object)ex.ToString());
+                        var job = jobs.FirstOrDefault(j => j.Id == message["connection_id"]);
+
+                        if (job != null)
+                        {
+                            job.Thread.Abort();
+                            jobs.Remove(job);
+                        }
                     }
-                }
-                Thread.Sleep(100);
-            }
-        }
-
-
-        private static void TargetConnect(IAsyncResult asyncResult)
-        {
-            var clientPair = asyncResult.AsyncState != null
-                ? (ClientPair)asyncResult.AsyncState
-                : throw new ArgumentNullException(nameof(asyncResult));
-            try
-            {
-                clientPair.target.EndConnect(asyncResult);
-                clientPair.targetStream = clientPair.target.GetStream();
-
-                SourceRead(clientPair);
-                clientPair.targetStream.BeginRead(clientPair.targetBuffer, 0, clientPair.targetBuffer.Length,
-                    TargetRead, clientPair);
-            }
-            catch (SocketException ex)
-            {
-                if (clientPair.connectRetryCount < 2)
-                {
-                    ++clientPair.connectRetryCount;
-                    clientPair.target.BeginConnect(clientPair.targetHost, clientPair.targetPort, TargetConnect, clientPair);
-                    Console.WriteLine("Retrying connect");
                 }
                 else
                 {
-                    Console.WriteLine("Connection failed: {0}", (object)ex.ToString());
+                    Thread.Sleep(100);
                 }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Failed connecting to target with '{0}'", (object)ex.ToString());
             }
         }
 
-        private static void SourceRead(ClientPair asyncState)
+        private static void OpenConnection(Func<object, Task> cb, Dictionary<string, string> response, int targetPort, string targetHost)
         {
             try
             {
-                var data = Convert.FromBase64String(asyncState.message);
-                var count = data.Length;
-                if (count > 0)
-                {
-                    if (asyncState.target.Connected)
-                    {
-                        asyncState.targetStream.BeginWrite(data, 0, count, TargetWrite, asyncState);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Client disconnected: '{0}'", (object)ex.Message);
-            }
-        }
+                TcpClient tcpClient = new TcpClient();
+                tcpClient.Connect(targetHost, targetPort);
+                Stream networkStream = null;
 
-        private static void TargetRead(IAsyncResult asyncResult)
-        {
-            var asyncState = asyncResult.AsyncState as ClientPair;
-            if (!asyncState.disconnected && asyncState.target.Connected)
-            {
-                var count = asyncState.targetStream.EndRead(asyncResult);
-                if (count > 0)
+                if (targetPort == 443)
                 {
-                    asyncState.cb(new
+                    var coolSSLThing = new SslStream(tcpClient.GetStream());
+                    coolSSLThing.AuthenticateAsClient(targetHost);
+                    networkStream = coolSSLThing;
+                }
+                else
+                {
+                    networkStream = tcpClient.GetStream();
+                }
+
+                var bytes = Convert.FromBase64String(response["data"].ToString());
+
+                if (targetPort == 443 || targetPort == 80)
+                {
+                    var coolString = System.Text.Encoding.UTF8.GetString(bytes).Replace("{ClientHost}", targetHost);
+                    bytes = System.Text.Encoding.UTF8.GetBytes(coolString);
+                }
+
+                networkStream.Write(bytes, 0, bytes.Length);
+
+                var targetBuffer = new byte[65536];
+
+                while (tcpClient.Connected)
+                {
+                    var count = networkStream.Read(targetBuffer, 0, targetBuffer.Length);
+                    cb(new
                     {
                         returnType = 5,
-                        output = new {
-                            data = Convert.ToBase64String(asyncState.targetBuffer.Take(count).ToArray()),
-                            host = asyncState.targetHost,
-                            port = asyncState.targetPort,
-                            connectionId = asyncState.id,
+                        output = new
+                        {
+                            data = Convert.ToBase64String(targetBuffer.Take(count).ToArray()),
+                            host = targetHost,
+                            port = targetPort,
+                            connectionId = response["connection_id"],
                         }
                     });
+                }
 
-                    try
-                    {
-                        asyncState.targetStream.BeginRead(asyncState.targetBuffer, 0, asyncState.targetBuffer.Length, TargetRead, asyncState);
-                    }
-                    catch
-                    {
-                        DisconnectPair(asyncState);
-                    }
-                }
-                else
-                {
-                    DisconnectPair(asyncState);
-                }
-            }
-        }
-
-        private static void DisconnectPair(ClientPair pair)
-        {
-            if (pair.disconnected)
-                return;
-            try
-            {
-                try
-                {
-                    if (pair.target.Client.Connected)
-                        pair.target.Client.Close();
-                }
-                catch { }
-
-                if (!pair.disconnected)
-                {
-                    pair.disconnected = true;
-                }
+                tcpClient.Close();
+                networkStream.Close();
+                tcpClient.Dispose();
+                networkStream.Close();
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.ToString());
+                Console.WriteLine("Failed when trying to accept new clients with '{0}'", (object)ex.ToString());
             }
         }
 
-        private static void TargetWrite(IAsyncResult asyncResult)
+        public class Job
         {
-            var pair = asyncResult.AsyncState != null
-                ? asyncResult.AsyncState as ClientPair
-                : throw new ArgumentNullException(nameof(asyncResult));
-
-            try
-            {
-                pair.targetStream.EndWrite(asyncResult);
-            }
-            catch
-            {
-                if (!pair.disconnected)
-                    DisconnectPair(pair);
-            }
+            public string Id;
+            public Thread Thread;
         }
-    }
-}
 
-internal class ClientPair
-{
-    public string targetHost;
-    public int targetPort;
-    public Func<object, Task> cb;
-    public string id;
-    public string message;
-    public readonly byte[] targetBuffer = new byte[65536];
-    public int connectRetryCount;
-    public bool disconnected;
-    public TcpClient target;
-    public NetworkStream targetStream;
+    }
 }
