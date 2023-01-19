@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -12,9 +12,8 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 
-namespace ConsoleApp1
+namespace CoreClient
 {
     public class Job
     {
@@ -39,7 +38,7 @@ namespace ConsoleApp1
             }
             while (true) { };
         }
-        static async void Go(string home = "http://192.168.1.12:8888/")
+        static async void Go(string home = "http://localHost:8888")
         {
             // create new socket.io client
             var client = new SocketIO(home);
@@ -211,7 +210,7 @@ namespace ConsoleApp1
             {
                 Invoke(assemblyName, assemblyArgs, "Stream", content => client.EmitAsync("echo", content), queue, jobId);
             }
-            catch (ThreadAbortException e)
+            catch (ThreadAbortException)
             {
                 output = "Job aborted";
             }
@@ -244,6 +243,7 @@ namespace ConsoleApp1
                     TextWriter prevConOut = Console.Out;
                     var sw = new StringWriter();
                     Console.SetOut(sw);
+
 
                     object instance = Activator.CreateInstance(type);
                     var inputObjects = (new object[] { args, callback, queue, jobId }).Where(p => p != null);
