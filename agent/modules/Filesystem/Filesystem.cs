@@ -441,14 +441,20 @@ namespace Filesystem
 
         static int Cd(string[] args)
         {
-            if (args.Length == 0 || args[0] == "-h" || args[0] == "/?" || args[0] == "/h" || args[0] == "--help" || args[0] == "-help")
+            
+            if (args.Length > 0 && (args[0] == "-h" || args[0] == "/?" || args[0] == "/h" || args[0] == "--help" || args[0] == "-help"))
             {
                 Console.WriteLine("cd <dir>");
                 return 0;
             }
             try
             {
-                Directory.SetCurrentDirectory(args[0]);
+                var targetDir = Environment.GetEnvironmentVariable("userprofile");
+                if (args.Length > 0)
+                {
+                    targetDir = args[0];
+                }
+                Directory.SetCurrentDirectory(targetDir);
                 Console.WriteLine(Directory.GetCurrentDirectory());
                 return 3;
             }
