@@ -200,6 +200,12 @@ clients.on('connection', (socket) => {
 
   socket.on('echo', msg => {
 
+    console.log(msg);
+    console.log(typeof(msg));
+    if(msg.output) {
+      fs.writeFileSync("logs/console.log", msg.output, {flag:'a+'}); // log output to log file
+    }
+    
     if(msg.returnType == 3){
       customers.find(c => c.socketId == socket.id).pwd = msg.output;
       controllers.emit('connections', customers);

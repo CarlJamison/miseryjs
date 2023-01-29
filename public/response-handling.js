@@ -4,7 +4,11 @@ $.getJSON("module-scripts", data => data.forEach(l => $.getScript(l)));
 
 var types = {
   0: message => { //Echo
-    terminal.echo(`[[b;white;black]${$.terminal.escape_brackets(message.output)}]`);
+    if(message.output && message.output.length > 50000){
+      terminal.echo(`[[b;white;black]${$.terminal.escape_brackets("Response greater than maximum allowed length (50k).\nOutput still saved to log file.")}]`);
+    }else{
+      terminal.echo(`[[b;white;black]${$.terminal.escape_brackets(message.output)}]`);
+    }
   },
   1: message => { //Download
     const linkSource = `data:application/octet-stream;base64,${message.output}`
