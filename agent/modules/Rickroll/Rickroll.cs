@@ -1,10 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.NetworkInformation;
-using System.Text;
-using System.Threading.Tasks;
-using static System.Net.WebRequestMethods;
 
 namespace Program
 {
@@ -12,7 +6,7 @@ namespace Program
     {
         public static void Main(string[] args)
         {
-            string url = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
+            string url = "https://www.youtube.com/watch?v=a3Z7zEc7AXQ?autoplay=1";
 
             if (args.Length > 0)
             {

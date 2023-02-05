@@ -1,6 +1,0 @@
-{"screenshot" : {
-    "depends": "Screenshot",
-    "agent_alias": ["run Screenshot"],
-    "summary": "Takes a picture of the victim's screen",
-    "usage": "screenshot"
-}}

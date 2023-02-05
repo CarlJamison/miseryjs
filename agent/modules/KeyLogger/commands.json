@@ -1,6 +1,0 @@
-{"keylog" : {
-    "depends": "KeyLogger",
-    "agent_alias": ["stream KeyLogger"],
-    "summary": "Starts the keylogger",
-    "usage": "keylog"
-}}

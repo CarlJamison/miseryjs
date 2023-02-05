@@ -1,6 +1,0 @@
-{"bypass" : {
-    "depends": "Bypasses",
-    "agent_alias": ["run Bypasses {*}"],
-    "summary": "Patch or unpatch AMSI or ETW via vanilla methods",
-    "usage": "bypass <amsi|etw> <patch|unpatch>"
-}}

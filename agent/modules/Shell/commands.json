@@ -1,6 +1,0 @@
-{"shell" : {
-    "depends": "Shell",
-    "agent_alias": ["run Shell {*}"],
-    "summary": "Run a command with cmd.exe (bad opsec)",
-    "usage": "shell <command> [arguments]"
-}}
