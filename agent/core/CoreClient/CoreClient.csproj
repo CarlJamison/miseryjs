@@ -97,5 +97,7 @@
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
     <Error Condition="!Exists('..\packages\System.Text.Json.6.0.2\build\System.Text.Json.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\System.Text.Json.6.0.2\build\System.Text.Json.targets'))" />
+    <Error Condition="!Exists('..\packages\dnMerge.0.5.15\build\dnMerge.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\dnMerge.0.5.15\build\dnMerge.targets'))" />
   </Target>
+  <Import Project="..\packages\dnMerge.0.5.15\build\dnMerge.targets" Condition="Exists('..\packages\dnMerge.0.5.15\build\dnMerge.targets')" />
 </Project>

@@ -1,7 +1,0 @@
-{"execute-assembly" : {
-    "depends": "ExecuteAssembly",
-    "agent_alias": ["run ExecuteAssembly {9} {1:}"],
-    "summary": "Executes a DotNet EXE in the current agent process. Must have a Public Main method",
-    "usage": "execute-assembly /path/to/dotnet/program.exe [arguments ...]",
-    "transforms": ["file_select"]
-}}

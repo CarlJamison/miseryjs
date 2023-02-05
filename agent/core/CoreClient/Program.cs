@@ -38,7 +38,7 @@ namespace CoreClient
             }
             while (true) { };
         }
-        static async void Go(string home = "http://localHost:8888")
+        static async void Go(string home = "http://10.0.0.53:8888")
         {
             // create new socket.io client
             var client = new SocketIO(home);
