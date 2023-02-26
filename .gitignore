@@ -6,3 +6,4 @@ packages/
 *.dll
 *.pdb
 *.log
+*.xml
