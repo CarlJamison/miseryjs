@@ -27,6 +27,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tcpproxy", "Tcpproxy\Tcppro
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tokens", "Tokens\Tokens.csproj", "{474FDBBB-D412-4981-88BF-9E313E8C5C7C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rundll", "Rundll\Rundll.csproj", "{47D96FBD-3F85-40D8-822A-A74B02105C25}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -81,6 +83,10 @@ Global
 		{474FDBBB-D412-4981-88BF-9E313E8C5C7C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{474FDBBB-D412-4981-88BF-9E313E8C5C7C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{474FDBBB-D412-4981-88BF-9E313E8C5C7C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{47D96FBD-3F85-40D8-822A-A74B02105C25}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{47D96FBD-3F85-40D8-822A-A74B02105C25}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{47D96FBD-3F85-40D8-822A-A74B02105C25}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{47D96FBD-3F85-40D8-822A-A74B02105C25}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

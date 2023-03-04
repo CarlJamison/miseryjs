@@ -1,0 +1,8 @@
+{
+  "rundll": {
+    "depends": "Rundll",
+    "agent_alias": [ "run Rundll {9} {0}" ],
+    "summary": "Loads an unmanaged DLL from the teamserver and optionally executes an exported function",
+    "usage": "rundll <dll_file_picker> [exported function]"
+  }
+}
