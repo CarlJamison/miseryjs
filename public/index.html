@@ -115,7 +115,7 @@
                     socket.emit('run-server-extension', {
                         name: args[0], 
                         id: currentId, 
-                        args: args.map(a => a.toString()).slice(1)
+                        args: processArgs(args).slice(1)
                     });
                 },
                 
@@ -128,7 +128,7 @@
                 .reduce((result, item) => {
                     result[item.n] = (...args) => {
                         if(noConnection()) return;
-                        socket.emit(item.v, {id: currentId, args: args.map(a => a.toString())});
+                        socket.emit(item.v, {id: currentId, args: processArgs(args)});
                     }
                     return result;
                 }, {}),
@@ -146,6 +146,18 @@
                 terminal.echo("no connection");
             }
             return !socket;
+        }
+
+        function processArgs(args){
+            return args.map(a => {
+                a = a.toString();
+                if((new RegExp('^{f:\\d+}')).test(a)){
+                    var id = +a.replace('{f:', '').replace('}', '');
+                    a = fileTexts[id];
+                    fileTexts[id] = null;
+                }
+                return a;
+            });
         }
 
         function initializeSocket(){

@@ -1,3 +1,6 @@
+fileTexts = [];
+fileIdCounter = 0;
+
 transforms = {
     ...transforms,
     file_select: (alias, args) => {
@@ -10,7 +13,9 @@ transforms = {
             reader.readAsDataURL(fileInput[0].files[0]);
             
             reader.onload = () => {
-                args[9] = reader.result.split('base64,')[1];
+                var id = fileIdCounter++;
+                args[9] = `{f:${id}}`;
+                fileTexts[id] = reader.result.split('base64,')[1];
                 fileInput[0].value = '';
                 runAlias(alias, args);
             };

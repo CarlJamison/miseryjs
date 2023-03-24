@@ -199,13 +199,6 @@ clients.on('connection', (socket) => {
   });
 
   socket.on('echo', msg => {
-
-    console.log(msg);
-    console.log(typeof(msg));
-    if(msg.output) {
-      fs.writeFileSync("logs/console.log", msg.output, {flag:'a+'}); // log output to log file
-    }
-    
     if(msg.returnType == 3){
       customers.find(c => c.socketId == socket.id).pwd = msg.output;
       controllers.emit('connections', customers);
@@ -216,6 +209,11 @@ clients.on('connection', (socket) => {
         .filter(h => h.returnType == msg.returnType)
         .every(h => h.handle({customers, clients, socket}, msg))
       )){
+
+      if(msg.output) {
+        fs.writeFileSync("logs/console.log", msg.output.toString(), {flag:'a+'}); // log output to log file
+      }
+        
       controllers.emit('echo', msg);
       var task = queuedTasks.find(t => msg == t.check && socket.id == t.cust);
 

@@ -1,6 +1,6 @@
 {
     "tcp-proxy" : {
-        "depends": "TcpProxy",
+        "depends": "Tcpproxy",
         "agent_alias": ["extension create-tcp-server {*}"],
         "summary": "Sets up a TCP Proxy",
         "usage": "tcp-proxy {target host} {target port} {server port}"
