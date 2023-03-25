@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "description": "business of misery",
   "dependencies": {
+    "dotenv": "^16.0.3",
     "express": "^4.17.1",
     "figlet": "^1.5.2",
     "socket.io": "^4.2.0",

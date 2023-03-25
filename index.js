@@ -1,14 +1,15 @@
 const express = require('express');
+require('dotenv').config();
 const app = express();
 const teamApp = express();
-const listener = require('http').Server(app, {
+const listener = require('http').Server(app);
+const team = require('http').Server(teamApp);
+const controllers = require('socket.io')(team, {
   maxHttpBufferSize: 1e8
 });
-const team = require('http').Server(teamApp, {
+const clients = require('socket.io')(listener, {
   maxHttpBufferSize: 1e8
 });
-const controllers = require('socket.io')(team);
-const clients = require('socket.io')(listener);
 const fs = require('fs');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
@@ -45,7 +46,7 @@ var customers = [];
 var queuedTasks = [];
 
 controllers.on('connection', (socket) => {
-  if(socket.handshake.auth.token != id){
+  if(process.env.DEBUG != "TRUE" && socket.handshake.auth.token != id){
     socket.disconnect(true);
     return;
   }
@@ -125,7 +126,7 @@ controllers.on('connection', (socket) => {
 
     if(cust){
       clients.to(cust.socketId).emit("run-task", msg.args);
-      console.log("Ran: " + msg.args);
+      console.log("Ran: " + msg.args.filter(a => a.toString().length < 100));
     }else{
       socket.emit('echo', 'Invalid client');
     }
@@ -228,8 +229,8 @@ clients.on('connection', (socket) => {
 });
 
 console.log(require('figlet').textSync('MiseryJS'));
-var listenerPort = process.argv[3] ?? 8888;
-var teamPort = process.argv[2] ?? 3000;
+var listenerPort = process.argv[3] ?? process.env.LISTENER_PORT ?? 8888;
+var teamPort = process.argv[2] ?? process.env.TEAM_PORT ?? 3000;
 listener.listen(listenerPort, console.log(`Listener server running at http://localhost:${listenerPort}/`));
 team.listen(teamPort, console.log(`Team server running at http://localhost:${teamPort}/`));
 console.log("The super secret password is " + id);

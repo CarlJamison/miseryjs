@@ -7,3 +7,4 @@ packages/
 *.pdb
 *.log
 *.xml
+.env
