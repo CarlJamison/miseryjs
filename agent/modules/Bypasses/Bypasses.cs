@@ -50,7 +50,7 @@ namespace Bypasses
             byte[] fix = { };
             if (args[0] == "patch")
             {
-                if (Environment.Is64BitOperatingSystem)
+                if (IntPtr.Size == 8) // 64-bit process
                 {
                     // x64 bypass bytes, reversed
                     fix = new byte[] { 0x00, 0xC3 };
@@ -124,7 +124,7 @@ namespace Bypasses
             byte[] fix = { };
             if (args[0] == "patch")
             {
-                if (Environment.Is64BitOperatingSystem)
+                if (IntPtr.Size == 8) // 64-bit process
                 {
                     // x64 bypass bytes, reversed
                     fix = new byte[] { 0xC3, 0x80, 0x07, 0x00, 0x57, 0xB8 };
