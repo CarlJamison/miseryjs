@@ -103,17 +103,20 @@ namespace TcpProxy
                 while (tcpClient.Connected)
                 {
                     var count = networkStream.Read(targetBuffer, 0, targetBuffer.Length);
-                    cb(new
+                    if(count > 0)
                     {
-                        returnType = 5,
-                        output = new
+                        cb(new
                         {
-                            data = Convert.ToBase64String(targetBuffer.Take(count).ToArray()),
-                            host = targetHost,
-                            port = targetPort,
-                            connectionId = response["connection_id"],
-                        }
-                    });
+                            returnType = 5,
+                            output = new
+                            {
+                                data = Convert.ToBase64String(targetBuffer.Take(count).ToArray()),
+                                host = targetHost,
+                                port = targetPort,
+                                connectionId = response["connection_id"],
+                            }
+                        });
+                    }
                 }
 
                 tcpClient.Close();

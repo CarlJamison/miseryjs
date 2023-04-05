@@ -8,6 +8,8 @@ module.exports = {
             returnType: 5,
             handle: (scope, message) => {
                 var cust = scope.customers.find(c => c.socketId == scope.socket.id);
+                if(!cust) return;
+
                 data = Buffer.from(message.output.data, 'base64');
                 var serverId = `${message.output.host}:${message.output.port}-${cust.id}`;
                 var connection = tcp_connections[serverId].connections[message.output.connectionId];
@@ -88,7 +90,7 @@ module.exports = {
                         server: null,
                         id: `${msg.args[0]}:${msg.args[1]}-${msg.id}`
                     }
-                    scope.clients.to(cust.socketId).emit("run-stream", ["TcpProxy", msg.args[0], msg.args[1]]);
+                    scope.clients.to(cust.socketId).emit("run-stream", ["Tcpproxy", msg.args[0], msg.args[1]]);
                 }else{
                     scope.socket.emit('echo', 'Invalid client');
                 }

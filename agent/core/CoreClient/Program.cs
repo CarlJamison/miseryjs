@@ -38,7 +38,7 @@ namespace CoreClient
             }
             while (true) { };
         }
-        static async void Go(string home = "http://10.0.0.53:8888")
+        static async void Go(string home = "http://localHost:8888")
         {
             // create new socket.io client
             var client = new SocketIO(home);
@@ -92,7 +92,7 @@ namespace CoreClient
                     StartTime = DateTime.Now,
                     Module = response.GetValue<string[]>()[0],
                     Method = "Main",
-                    Id = jobId++,
+                    Id = ++jobId,
                     Thread = myNewThread
                 });
 
@@ -132,7 +132,7 @@ namespace CoreClient
             {
                 var dict = JsonSerializer.Deserialize<Dictionary<string, string>>(response.GetValue(0));
                 var job_id = Int32.Parse(dict["id"]);
-                jobs.First(j => j.Id == jobId).Queue.Enqueue(dict);
+                jobs.First(j => j.Id == job_id).Queue.Enqueue(dict);
             });
 
             client.On("kill-job", response =>
