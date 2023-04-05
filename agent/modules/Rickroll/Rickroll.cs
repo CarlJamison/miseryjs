@@ -1,4 +1,5 @@
 ﻿using System;
+using AudioSwitcher.AudioApi.CoreAudio;
 
 namespace Program
 {
@@ -6,7 +7,10 @@ namespace Program
     {
         public static void Main(string[] args)
         {
-            string url = "https://www.youtube.com/watch?v=a3Z7zEc7AXQ?autoplay=1";
+            //by default, the URL is a no-ad version of Rick Astley's magnum opus.  
+            string url = "https://www.youtube.com/watch?v=a3Z7zEc7AXQ?autoplay=1"; //"?autoplay=1" at the end of the url should make the video play automatically even if the user has autoplay turned off.
+            //
+            string volumeLevel = "100"
 
             if (args.Length > 0)
             {
@@ -22,6 +26,8 @@ namespace Program
                 }
             }
             OpenUrl(url);
+            //turn the volume to the user's specified level (default 100)
+            VolumeSwitch(volumeLevel);
 
         }
         static void Usage()
@@ -33,7 +39,9 @@ namespace Program
         {
             try
             {
+                //launch the URL in the default browser
                 System.Diagnostics.Process.Start(url);
+
             }
             catch (System.ComponentModel.Win32Exception noBrowser)
             {
@@ -44,6 +52,11 @@ namespace Program
             {
                 Console.WriteLine(other.Message);
             }
+        }
+        static void VolumeSwitch(volumeLevel) {
+            CoreAudioDevice defaultPlaybackDevice = new CoreAudioController().DefaultPlaybackDevice;
+            Debug.WriteLine("Current Volume:" + defaultPlaybackDevice.Volume);
+            defaultPlaybackDevice.Volume = volumeLevel;
         }
 
     }

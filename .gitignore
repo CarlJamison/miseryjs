@@ -3,3 +3,6 @@ node_modules
 bin/
 obj/
 packages/
+/logs
+/tmux-server-1094.log
+/tmux-client-1092.log
