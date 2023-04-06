@@ -41,3 +41,10 @@ tr:nth-child(even) {
 .connection-button:hover{
     background-color: #b8c9ed;
 }
+.connection-info{
+    padding-bottom: 4px; 
+    overflow-wrap: anywhere;
+}
+.connection-info span{
+    text-transform: capitalize;
+}

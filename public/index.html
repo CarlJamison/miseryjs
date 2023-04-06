@@ -92,7 +92,7 @@
             terminal = $('div.cli').terminal({
                 login: (username, password) => {
                     if(socket){
-                        this.echo("connection already exists");
+                        terminal.echo("connection already exists");
                         return;
                     }
                     socket = io({auth: {token: password}});
@@ -162,10 +162,10 @@
 
         function initializeSocket(){
 
-            /*socket.on("disconnect", () => {
-                terminal.echo('connection failed');
+            socket.on("invalid-login", () => {
+                terminal.echo("[[b;red;black]invalid login]");
                 socket = null;
-            });*/
+            });
 
             socket.on("echo", handleEcho);
 
@@ -180,24 +180,21 @@
                 $("div.connections").html(connections.length + " open connections");
 
                 connections.forEach(element => {
-                    var contentString = "";
-                    Object.keys(element).forEach(p => {
-                        contentString += `<div style="padding-bottom: 4px; overflow-wrap: anywhere"><span style="text-transform: capitalize">${p}: </span>${element[p]}</div>`
-                    });
-                    contentString += 
-                    $("div.connections").append(`<div class="connection-button" id="${element.id}">${contentString}</div>`);
-                });
-                $("div.connection-button").click(function(){
-
-                    if(currentId && currentId.length) $(`#${currentId}`).removeClass("current-connection");
-                    currentId = this.id;
-                    $(`#${currentId}`).addClass("current-connection");
-                    terminal.set_prompt(currentId + "[[gb;red;black]>] ");
+                    var contentString = Object.keys(element).reduce((cs, p) =>
+                        cs + `<div class="connection-info"><span>${p}: </span>${element[p]}</div>`, "");
+                    
+                    $("div.connections").append(`<div class="connection-button" onclick="connectionChange('${element.id}')" id="${element.id}">${contentString}</div>`);
                 });
 
                 if(currentId)  $(`#${currentId}`).addClass("current-connection");
-
             });
+        }
+
+        function connectionChange(id){
+            if(currentId && currentId.length) $(`#${currentId}`).removeClass("current-connection");
+            currentId = id;
+            terminal.set_prompt(currentId + "[[gb;red;black]>] ");
+            $(`#${currentId}`).addClass("current-connection");
         }
         </script>
 </body>

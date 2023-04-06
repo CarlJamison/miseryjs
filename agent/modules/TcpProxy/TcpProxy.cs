@@ -117,6 +117,7 @@ namespace TcpProxy
                             }
                         });
                     }
+                    Thread.Sleep(10);
                 }
 
                 tcpClient.Close();

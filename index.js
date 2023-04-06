@@ -47,6 +47,7 @@ var queuedTasks = [];
 
 controllers.on('connection', (socket) => {
   if(process.env.DEBUG != "TRUE" && socket.handshake.auth.token != id){
+    socket.emit('invalid-login');
     socket.disconnect(true);
     return;
   }
@@ -193,7 +194,7 @@ clients.on('connection', (socket) => {
     controllers.emit('connections', customers);
   });
 
-  socket.on('disconnect', function() {
+  socket.on('disconnect', () => {
     console.log(socket.id + " disconnected");
     customers = customers.filter(c => c.socketId != socket.id);
     controllers.emit('connections', customers);
