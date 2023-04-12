@@ -101,4 +101,7 @@
     <Error Condition="!Exists('..\packages\dnMerge.0.5.15\build\dnMerge.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\dnMerge.0.5.15\build\dnMerge.targets'))" />
   </Target>
   <Import Project="..\packages\dnMerge.0.5.15\build\dnMerge.targets" Condition="Exists('..\packages\dnMerge.0.5.15\build\dnMerge.targets')" />
+  <PropertyGroup>
+    <PostBuildEvent>copy "$(TargetPath)" ..\..\..\..\..\public</PostBuildEvent>
+  </PropertyGroup>
 </Project>
