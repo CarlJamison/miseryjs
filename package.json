@@ -12,5 +12,8 @@
   "scripts": {
     "start": "node index.js",
     "build": "dotnet build agent/core/CoreClient.sln"
+  },
+  "devDependencies": {
+    "eslint": "^8.38.0"
   }
 }
