@@ -1,0 +1,6 @@
+{"selfdelete" : {
+    "depends": "Selfdelete",
+    "agent_alias": ["run Selfdelete {*}"],
+    "summary": "Deletes the currently running executable",
+    "usage": "selfdelete"
+}}

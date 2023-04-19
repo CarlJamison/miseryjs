@@ -29,6 +29,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tokens", "Tokens\Tokens.csp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rundll", "Rundll\Rundll.csproj", "{47D96FBD-3F85-40D8-822A-A74B02105C25}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Selfdelete", "Selfdelete\Selfdelete.csproj", "{FB0E5E81-51CF-4B06-9B8C-A41BC9A0F7CC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -87,6 +89,10 @@ Global
 		{47D96FBD-3F85-40D8-822A-A74B02105C25}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{47D96FBD-3F85-40D8-822A-A74B02105C25}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{47D96FBD-3F85-40D8-822A-A74B02105C25}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FB0E5E81-51CF-4B06-9B8C-A41BC9A0F7CC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FB0E5E81-51CF-4B06-9B8C-A41BC9A0F7CC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FB0E5E81-51CF-4B06-9B8C-A41BC9A0F7CC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FB0E5E81-51CF-4B06-9B8C-A41BC9A0F7CC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
