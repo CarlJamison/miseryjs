@@ -1,6 +1,7 @@
 var net = require("net");
 var tcp_connections = [];
 const { v4: uuidv4 } = require('uuid');
+const DEBUG = true;
 
 module.exports = {
     handlers: [
@@ -9,12 +10,13 @@ module.exports = {
             handle: (scope, message) => {
                 var cust = scope.customers.find(c => c.socketId == scope.socket.id);
                 if(!cust) return;
-
+                if(DEBUG) console.log("Recieving: " );
                 data = Buffer.from(message.output.data, 'base64');
                 var serverId = `${message.output.host}:${message.output.port}-${cust.id}`;
                 var connection = tcp_connections[serverId].connections[message.output.connectionId];
                 if(connection){
                     connection.write(data);
+                    if(DEBUG) console.log(message.output.connectionId + " : " + data);
                 }
                 return false;
             }
@@ -43,11 +45,13 @@ module.exports = {
                     tcp_sock.on("data", data => {
                         var strData = data.toString();
                         strData = strData.replace(`localhost:${coolServer.port}`, '{ClientHost}');
+                        if(DEBUG) console.log("Writing: " + id + " : " + strData);
 
                         scope.clients.to(cust.socketId).emit("add-job-data", { 
                             id: coolServer.jobId.toString(),
                             connection_id: id, 
-                            data: Buffer.from(strData).toString('base64') });
+                            data: Buffer.from(strData).toString('base64') })
+                            //data: data.toString('base64') });
                     });
                 
                     tcp_sock.on("end", () => {
@@ -57,6 +61,8 @@ module.exports = {
                             connection_id: id,
                         });
                     });
+
+                    tcp_sock.on("error", console.log);
                 });
 
                 coolServer.server.listen(coolServer.port, () => {
