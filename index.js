@@ -89,7 +89,7 @@ controllers.on('connection', (socket) => {
     if(cust){
       if(fs.existsSync(`./${msg.fileName}`)){
         
-        binary = fs.readFileSync(`./${msg.fileName}`).toString('base64');
+        var binary = fs.readFileSync(`./${msg.fileName}`).toString('base64');
         clients.to(cust.socketId).emit("load", binary);
         console.log("Loaded: " + msg.fileName);
       }else{
@@ -106,7 +106,7 @@ controllers.on('connection', (socket) => {
     if(cust){
       if(fs.existsSync(`./${fileName}`)){
         
-        binary = fs.readFileSync(`./${fileName}`).toString('base64');
+        var binary = fs.readFileSync(`./${fileName}`).toString('base64');
         queuedTasks.push({
           check: "Loaded " + fileName,
           cust: cust.socketId,
@@ -178,7 +178,7 @@ clients.on('connection', (socket) => {
   }, 1000);
 
   socket.on('pong', () => {
-    latency = Date.now() - startTime;
+    var latency = Date.now() - startTime;
     
     var cust = customers.find(c => c.socketId == socket.id);
     if(cust){
@@ -209,7 +209,7 @@ clients.on('connection', (socket) => {
     if(extensions.every(x => 
         !x.handlers || x.handlers
         .filter(h => h.returnType == msg.returnType)
-        .every(h => h.handle({customers, clients, socket}, msg))
+        .every(h => h.handle({customers, clients, socket, controllers}, msg))
       )){
 
       if(msg.output) {

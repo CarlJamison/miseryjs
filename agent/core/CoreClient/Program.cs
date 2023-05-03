@@ -100,8 +100,9 @@ namespace CoreClient
 
             client.On("run-stream", response =>
             {
+                var newJobId = ++jobId;
                 var queue = new Queue<Dictionary<string, string>>();
-                Thread myNewThread = new Thread(() => RunStream(client, response, queue, ++jobId));
+                Thread myNewThread = new Thread(() => RunStream(client, response, queue, newJobId));
                 myNewThread.Start();
 
                 jobs.Add(new Job
@@ -109,7 +110,7 @@ namespace CoreClient
                     StartTime = DateTime.Now,
                     Module = response.GetValue<string[]>()[0],
                     Method = "Stream",
-                    Id = jobId,
+                    Id = newJobId,
                     Thread = myNewThread,
                     Queue = queue
                 });

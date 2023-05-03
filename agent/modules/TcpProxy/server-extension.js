@@ -39,11 +39,10 @@ module.exports = {
                 coolServer.server = net.createServer(tcp_sock => {
                     var id = uuidv4();
                     coolServer.connections[id] = tcp_sock;
-
+                    
                     tcp_sock.on("data", data => {
                         var strData = data.toString();
                         strData = strData.replace(`localhost:${coolServer.port}`, '{ClientHost}');
-
                         scope.clients.to(cust.socketId).emit("add-job-data", { 
                             id: coolServer.jobId.toString(),
                             connection_id: id, 
@@ -51,16 +50,18 @@ module.exports = {
                     });
                 
                     tcp_sock.on("end", () => {
-                        tcp_connections[serverId].connections[id] = null;
-                        scope.clients.to(cust.socketId).emit("add-job-data", { 
-                            id: coolServer.jobId.toString(),
-                            connection_id: id,
-                        });
+                        if(tcp_connections[serverId]){
+                            tcp_connections[serverId].connections[id] = null;
+                            scope.clients.to(cust.socketId).emit("add-job-data", { 
+                                id: coolServer.jobId.toString(),
+                                connection_id: id,
+                            });
+                        }  
                     });
                 });
 
                 coolServer.server.listen(coolServer.port, () => {
-                    //scope.socket.emit('echo', `TCP is initialized and running on port: ${coolServer.port}`);
+                    scope.controllers.emit('echo', `TCP is initialized and running on port: ${coolServer.port}`);
                 });
             }
         }
@@ -91,6 +92,7 @@ module.exports = {
                         id: `${msg.args[0]}:${msg.args[1]}-${msg.id}`
                     }
                     scope.clients.to(cust.socketId).emit("run-stream", ["Tcpproxy", msg.args[0], msg.args[1]]);
+                    scope.socket.emit('echo', 'Tcp proxy initiated, awaiting job creation');
                 }else{
                     scope.socket.emit('echo', 'Invalid client');
                 }

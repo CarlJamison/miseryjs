@@ -11,6 +11,7 @@
   },
   "scripts": {
     "start": "node index.js",
-    "build": "dotnet build agent/core/CoreClient.sln"
+    "build": "dotnet build agent/core/CoreClient.sln",
+    "modules": "dotnet build agent/modules/Modules.sln"
   }
 }
