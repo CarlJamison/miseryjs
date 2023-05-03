@@ -6,8 +6,6 @@ using System.Threading;
 using System.Collections.Generic;
 using System.IO;
 using System.Net.Security;
-using static TcpProxy.Program;
-using System.Collections;
 
 namespace TcpProxy
 {
@@ -47,17 +45,7 @@ namespace TcpProxy
                         var existingJob = jobs.FirstOrDefault(j => j.Id == connectionId);
                         if (existingJob != null)
                         {
-                            if (!existingJob.Client.Connected)
-                            {
-                                existingJob.Thread.Abort();
-                                existingJob.Thread = new Thread(() => OpenConnection(cb, message, targetPort, targetHost, existingJob));
-                                existingJob.Thread.Start();
-                            }
-                            else
-                            {
-                                WriteToStream(existingJob.Stream, message, targetPort, targetHost);
-                            }
-
+                            WriteToStream(existingJob.Stream, message, targetPort, targetHost);
                         }
                         else
                         {
@@ -83,7 +71,7 @@ namespace TcpProxy
                 }
                 else
                 {
-                    Thread.Sleep(10);
+                    Thread.Sleep(100);
                 }
             }
         }
@@ -96,7 +84,7 @@ namespace TcpProxy
                 tcpClient.Connect(targetHost, targetPort);
                 Stream networkStream = null;
 
-                if (targetPort == 443)
+                if (false && targetPort == 443)
                 {
                     var coolSSLThing = new SslStream(tcpClient.GetStream());
                     coolSSLThing.AuthenticateAsClient(targetHost);
@@ -149,11 +137,11 @@ namespace TcpProxy
         {
             var bytes = Convert.FromBase64String(message["data"]);
 
-            if (targetPort == 443 || targetPort == 80)
+            /*if (targetPort == 443 || targetPort == 80)
             {
                 var coolString = System.Text.Encoding.UTF8.GetString(bytes).Replace("{ClientHost}", targetHost);
                 bytes = System.Text.Encoding.UTF8.GetBytes(coolString);
-            }
+            }*/
 
             networkStream.Write(bytes, 0, bytes.Length);
         }

@@ -1,7 +1,7 @@
 var net = require("net");
 var tcp_connections = [];
 const { v4: uuidv4 } = require('uuid');
-const DEBUG = true;
+const DEBUG = false;
 
 module.exports = {
     handlers: [
@@ -50,8 +50,8 @@ module.exports = {
                         scope.clients.to(cust.socketId).emit("add-job-data", { 
                             id: coolServer.jobId.toString(),
                             connection_id: id, 
-                            data: Buffer.from(strData).toString('base64') })
-                            //data: data.toString('base64') });
+                            //data: Buffer.from(strData).toString('base64') })
+                            data: data.toString('base64') });
                     });
                 
                     tcp_sock.on("end", () => {
