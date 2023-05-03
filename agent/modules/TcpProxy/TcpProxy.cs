@@ -6,6 +6,8 @@ using System.Threading;
 using System.Collections.Generic;
 using System.IO;
 using System.Net.Security;
+using static TcpProxy.Program;
+using System.Collections;
 
 namespace TcpProxy
 {
@@ -38,22 +40,39 @@ namespace TcpProxy
                 if (queue.Any())
                 {
                     var message = queue.Dequeue();
+                    var connectionId = message["connection_id"];
 
                     if (message.ContainsKey("data"))
                     {
-
-                        Thread myNewThread = new Thread(() => OpenConnection(cb, message, targetPort, targetHost));
-                        myNewThread.Start();
-
-                        jobs.Add(new Job
+                        var existingJob = jobs.FirstOrDefault(j => j.Id == connectionId);
+                        if (existingJob != null)
                         {
-                            Id = message["connection_id"],
-                            Thread = myNewThread
-                        });
+                            if (!existingJob.Client.Connected)
+                            {
+                                existingJob.Thread.Abort();
+                                existingJob.Thread = new Thread(() => OpenConnection(cb, message, targetPort, targetHost, existingJob));
+                                existingJob.Thread.Start();
+                            }
+                            else
+                            {
+                                WriteToStream(existingJob.Stream, message, targetPort, targetHost);
+                            }
+
+                        }
+                        else
+                        {
+                            var newJob = new Job
+                            {
+                                Id = connectionId
+                            };
+                            newJob.Thread = new Thread(() => OpenConnection(cb, message, targetPort, targetHost, newJob));
+                            newJob.Thread.Start();
+                            jobs.Add(newJob);
+                        }
                     }
                     else
                     {
-                        var job = jobs.FirstOrDefault(j => j.Id == message["connection_id"]);
+                        var job = jobs.FirstOrDefault(j => j.Id == connectionId);
 
                         if (job != null)
                         {
@@ -64,12 +83,12 @@ namespace TcpProxy
                 }
                 else
                 {
-                    Thread.Sleep(100);
+                    Thread.Sleep(10);
                 }
             }
         }
 
-        private static void OpenConnection(Func<object, Task> cb, Dictionary<string, string> response, int targetPort, string targetHost)
+        private static void OpenConnection(Func<object, Task> cb, Dictionary<string, string> response, int targetPort, string targetHost, Job job)
         {
             try
             {
@@ -88,22 +107,17 @@ namespace TcpProxy
                     networkStream = tcpClient.GetStream();
                 }
 
-                var bytes = Convert.FromBase64String(response["data"].ToString());
+                job.Stream = networkStream;
+                job.Client = tcpClient;
 
-                if (targetPort == 443 || targetPort == 80)
-                {
-                    var coolString = System.Text.Encoding.UTF8.GetString(bytes).Replace("{ClientHost}", targetHost);
-                    bytes = System.Text.Encoding.UTF8.GetBytes(coolString);
-                }
-
-                networkStream.Write(bytes, 0, bytes.Length);
+                WriteToStream(networkStream, response, targetPort, targetHost);
 
                 var targetBuffer = new byte[65536];
 
                 while (tcpClient.Connected)
                 {
                     var count = networkStream.Read(targetBuffer, 0, targetBuffer.Length);
-                    if(count > 0)
+                    if (count > 0)
                     {
                         cb(new
                         {
@@ -131,10 +145,25 @@ namespace TcpProxy
             }
         }
 
+        private static void WriteToStream(Stream networkStream, Dictionary<string, string> message, int targetPort, string targetHost)
+        {
+            var bytes = Convert.FromBase64String(message["data"]);
+
+            if (targetPort == 443 || targetPort == 80)
+            {
+                var coolString = System.Text.Encoding.UTF8.GetString(bytes).Replace("{ClientHost}", targetHost);
+                bytes = System.Text.Encoding.UTF8.GetBytes(coolString);
+            }
+
+            networkStream.Write(bytes, 0, bytes.Length);
+        }
+
         public class Job
         {
             public string Id;
             public Thread Thread;
+            public Stream Stream;
+            public TcpClient Client;
         }
 
     }
