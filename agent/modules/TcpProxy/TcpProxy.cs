@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using System.Threading;
 using System.Collections.Generic;
 using System.IO;
-using System.Net.Security;
 
 namespace TcpProxy
 {
@@ -82,18 +81,7 @@ namespace TcpProxy
             {
                 TcpClient tcpClient = new TcpClient();
                 tcpClient.Connect(targetHost, targetPort);
-                Stream networkStream = null;
-
-                if (false && targetPort == 443)
-                {
-                    var coolSSLThing = new SslStream(tcpClient.GetStream());
-                    coolSSLThing.AuthenticateAsClient(targetHost);
-                    networkStream = coolSSLThing;
-                }
-                else
-                {
-                    networkStream = tcpClient.GetStream();
-                }
+                Stream networkStream = tcpClient.GetStream();
 
                 job.Stream = networkStream;
                 job.Client = tcpClient;
@@ -136,13 +124,6 @@ namespace TcpProxy
         private static void WriteToStream(Stream networkStream, Dictionary<string, string> message, int targetPort, string targetHost)
         {
             var bytes = Convert.FromBase64String(message["data"]);
-
-            /*if (targetPort == 443 || targetPort == 80)
-            {
-                var coolString = System.Text.Encoding.UTF8.GetString(bytes).Replace("{ClientHost}", targetHost);
-                bytes = System.Text.Encoding.UTF8.GetBytes(coolString);
-            }*/
-
             networkStream.Write(bytes, 0, bytes.Length);
         }
 

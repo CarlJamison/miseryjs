@@ -43,14 +43,11 @@ module.exports = {
                     coolServer.connections[id] = tcp_sock;
                     
                     tcp_sock.on("data", data => {
-                        var strData = data.toString();
-                        strData = strData.replace(`localhost:${coolServer.port}`, '{ClientHost}');
-                        if(DEBUG) console.log("Writing: " + id + " : " + strData);
+                        if(DEBUG) console.log("Writing: " + id + " : " + data.toString());
 
                         scope.clients.to(cust.socketId).emit("add-job-data", { 
                             id: coolServer.jobId.toString(),
-                            connection_id: id, 
-                            //data: Buffer.from(strData).toString('base64') })
+                            connection_id: id,
                             data: data.toString('base64') });
                     });
                 
