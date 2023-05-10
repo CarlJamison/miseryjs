@@ -1,0 +1,17 @@
+{
+    "socks-proxy" : {
+        "depends": "Socksproxy",
+        "agent_alias": ["extension create-socks-server {*}"],
+        "summary": "Sets up a SOCKS Proxy",
+        "usage": "socks-proxy {server port}"
+    },
+    "get-socks-proxies" : {
+        "agent_alias": ["extension get-socks-servers"],
+        "summary": "Gets all existing SOCKS Proxies"
+    },
+    "close-socks-proxy" : {
+        "agent_alias": ["extension close-socks-server {*}"],
+        "summary": "Closes a SOCKS Proxy",
+        "usage": "close-socks-proxy {server port}"
+    }
+}

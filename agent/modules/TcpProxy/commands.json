@@ -12,6 +12,6 @@
     "close-tcp-proxy" : {
         "agent_alias": ["extension close-tcp-server {*}"],
         "summary": "Closes a TCP Proxy",
-        "usage": "tcp-proxy {server port}"
+        "usage": "close-tcp-proxy {server port}"
     }
 }

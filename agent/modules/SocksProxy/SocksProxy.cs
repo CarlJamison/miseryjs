@@ -1,4 +1,4 @@
-using System.Linq;
+﻿using System.Linq;
 using System;
 using System.Net.Sockets;
 using System.Threading.Tasks;
@@ -6,7 +6,7 @@ using System.Threading;
 using System.Collections.Generic;
 using System.IO;
 
-namespace TcpProxy
+namespace SocksProxy
 {
     public class Program
     {
@@ -17,18 +17,14 @@ namespace TcpProxy
             return 0;
         }
 
-        public static void Stream(Func<object, Task> cb, string[] args, Queue<Dictionary<string, string>> queue, int jobId)
+        public static void Stream(Func<object, Task> cb, Queue<Dictionary<string, string>> queue, int jobId)
         {
-            var targetHost = args[0];
-            var targetPort = int.Parse(args[1]);
             List<Job> jobs = new List<Job>();
             cb(new
             {
-                returnType = 6,
+                returnType = 8,
                 output = new
                 {
-                    host = targetHost,
-                    port = targetPort,
                     jobId = jobId
                 }
             });
@@ -52,7 +48,7 @@ namespace TcpProxy
                             {
                                 Id = connectionId
                             };
-                            newJob.Thread = new Thread(() => OpenConnection(cb, message, targetPort, targetHost, newJob));
+                            newJob.Thread = new Thread(() => OpenConnection(cb, message, newJob));
                             newJob.Thread.Start();
                             jobs.Add(newJob);
                         }
@@ -75,12 +71,12 @@ namespace TcpProxy
             }
         }
 
-        private static void OpenConnection(Func<object, Task> cb, Dictionary<string, string> response, int targetPort, string targetHost, Job job)
+        private static void OpenConnection(Func<object, Task> cb, Dictionary<string, string> response, Job job)
         {
             try
             {
                 TcpClient tcpClient = new TcpClient();
-                tcpClient.Connect(targetHost, targetPort);
+                tcpClient.Connect(response["host"], int.Parse(response["port"]));
                 Stream networkStream = tcpClient.GetStream();
 
                 job.Stream = networkStream;
@@ -97,12 +93,10 @@ namespace TcpProxy
                     {
                         cb(new
                         {
-                            returnType = 5,
+                            returnType = 7,
                             output = new
                             {
                                 data = Convert.ToBase64String(targetBuffer.Take(count).ToArray()),
-                                host = targetHost,
-                                port = targetPort,
                                 connectionId = response["connection_id"],
                             }
                         });
