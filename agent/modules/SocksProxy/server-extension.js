@@ -13,10 +13,14 @@ module.exports = {
                 if(DEBUG) console.log("Recieving: " );
                 data = Buffer.from(message.output.data, 'base64');
 
-                var connection = socksProxies[cust.id].sockets[message.output.connectionId];
-                if(connection){
-                    connection.write(data);
-                    if(DEBUG) console.log(message.output.connectionId + " : " + data);
+                var proxy = socksProxies[cust.id];
+                if(proxy){
+                    var connection = proxy.sockets[message.output.connectionId];
+                
+                    if(connection){
+                        connection.write(data);
+                        if(DEBUG) console.log(message.output.connectionId + " : " + data);
+                    }
                 }
                 return false;
             }
