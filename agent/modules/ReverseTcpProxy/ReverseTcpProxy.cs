@@ -22,8 +22,7 @@ namespace ReverseTcpProxy
         {
             
             var targetPort = int.Parse(args[0]);
-            TcpListener server = new TcpListener(IPAddress.Any, targetPort);
-            server.Start();
+
             List<Job> jobs = new List<Job>();
             cb(new
             {
@@ -35,52 +34,53 @@ namespace ReverseTcpProxy
                 }
             });
 
-            var connectionCreation = new Thread(() => Listen(cb, server, targetPort, jobs));
-            connectionCreation.Start();
+            TcpListener server = new TcpListener(IPAddress.Any, targetPort);
+            server.Start();
 
-            while (true)
+            try
             {
-                if (queue.Any())
+                while (true)
                 {
-                    var message = queue.Dequeue();
-                    var connectionId = message["connection_id"];
-
-                    var job = jobs.FirstOrDefault(j => j.Id == connectionId);
-                    if(job != null)
+                    if (server.Pending())
                     {
-                        if (message.ContainsKey("data"))
+                        var newJob = new Job
                         {
-                            var bytes = Convert.FromBase64String(message["data"]);
-                            job.Stream.Write(bytes, 0, bytes.Length);
-                        }
-                        else
+                            Id = Guid.NewGuid().ToString(),
+                            Client = server.AcceptTcpClient(),
+                        };
+                        newJob.Thread = new Thread(() => OpenConnection(cb, targetPort, newJob));
+                        newJob.Thread.Start();
+                        jobs.Add(newJob);
+                    }
+
+                    if (queue.Any())
+                    {
+                        var message = queue.Dequeue();
+                        var connectionId = message["connection_id"];
+
+                        var job = jobs.FirstOrDefault(j => j.Id == connectionId);
+                        if (job != null)
                         {
-                            job.Thread.Abort();
-                            jobs.Remove(job);
+                            if (message.ContainsKey("data"))
+                            {
+                                var bytes = Convert.FromBase64String(message["data"]);
+                                job.Stream.Write(bytes, 0, bytes.Length);
+                            }
+                            else
+                            {
+                                job.Thread.Abort();
+                                jobs.Remove(job);
+                            }
                         }
                     }
-                }
-                else
-                {
+
                     Thread.Sleep(100);
                 }
             }
-        }
-
-        private static void Listen(Func<object, Task> cb, TcpListener server, int targetPort, List<Job> jobs)
-        {
-            while (true)
+            finally
             {
-                var client = server.AcceptTcpClient();
-                var newJob = new Job
-                {
-                    Id = Guid.NewGuid().ToString(),
-                    Client = client,
-                };
-                newJob.Thread = new Thread(() => OpenConnection(cb, targetPort, newJob));
-                newJob.Thread.Start();
-                jobs.Add(newJob);
-                Thread.Sleep(100);
+                jobs.ForEach(j => j.Thread.Abort());
+                server.Stop();
             }
         }
 
@@ -110,17 +110,14 @@ namespace ReverseTcpProxy
                             }
                         });
                     }
-                    Thread.Sleep(10);
-                }
 
-                job.Client.Close();
-                networkStream.Close();
-                job.Client.Dispose();
-                networkStream.Close();
+                    Thread.Sleep(100);
+                }
             }
-            catch (Exception ex)
+            finally
             {
-                Console.WriteLine("Failed when trying to accept new clients with '{0}'", (object)ex.ToString());
+                job.Client.Close();
+                job.Client.Dispose();
             }
         }
 

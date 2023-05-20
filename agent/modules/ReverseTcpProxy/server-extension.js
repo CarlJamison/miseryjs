@@ -9,14 +9,16 @@ module.exports = {
             handle: (scope, message) => {
                 var cust = scope.customers.find(c => c.socketId == scope.socket.id);
                 if(!cust) return;
-                if(DEBUG) console.log("Recieving: " );
-                data = Buffer.from(message.output.data, 'base64');
+
                 var serverId = `${message.output.port}:${cust.id}`;
                 var server = reverse_tcp_connections[serverId];
-                if(!server) return false;
+                if(!server || !server.jobId) return false;
 
                 var id = message.output.connectionId;
                 var connection = server.connections[id];
+                
+                if(DEBUG) console.log("Recieving: " );
+                data = Buffer.from(message.output.data, 'base64');
 
                 if(!connection){
                     var connection = new net.Socket();
@@ -71,6 +73,7 @@ module.exports = {
                 }
 
                 connection.jobId = msg.output.jobId;
+                scope.controllers.emit('echo', `Reverse TCP Proxy is initialized and running on agent port: ${msg.output.port}`);
             }
         }
     ],
@@ -115,7 +118,7 @@ module.exports = {
                 
                 var cust = scope.customers.find(c => c.id == msg.id);
                 if(cust){
-                    scope.clients.to(cust.socketId).emit("kill-job", [server.jobId]);
+                    scope.clients.to(cust.socketId).emit("kill-job", [server.jobId.toString()]);
                     delete reverse_tcp_connections[server.id];
                     scope.socket.emit('echo', `Server port ${msg.args[0]} closed`);
                 }else{
