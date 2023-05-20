@@ -14,13 +14,12 @@ module.exports = {
                 data = Buffer.from(message.output.data, 'base64');
 
                 var proxy = socksProxies[cust.id];
-                if(proxy){
-                    var connection = proxy.sockets[message.output.connectionId];
-                
-                    if(connection){
-                        connection.write(data);
-                        if(DEBUG) console.log(message.output.connectionId + " : " + data);
-                    }
+                if(!proxy) return false;
+
+                var connection = proxy.sockets[message.output.connectionId];
+                if(connection){
+                    connection.write(data);
+                    if(DEBUG) console.log(message.output.connectionId + " : " + data);
                 }
                 return false;
             }
@@ -39,7 +38,7 @@ module.exports = {
                     return false;  //Either not a valid server or already created
                 }
 
-                coolServer.jobId = msg.output.jobId;
+                coolServer.jobId = msg.output.jobId.toString();
                 scope.controllers.emit('echo', `Socks proxy is initialized and running on port: ${coolServer.port}`);
             }
         }
@@ -72,7 +71,7 @@ module.exports = {
                             if(DEBUG) console.log("Writing: " + id + " : " + data.toString());
     
                             scope.clients.to(cust.socketId).emit("add-job-data", { 
-                                id: proxy.jobId.toString(),
+                                id: proxy.jobId,
                                 connection_id: id,
                                 host: info.dstAddr,
                                 port: info.dstPort.toString(),
@@ -82,9 +81,9 @@ module.exports = {
                         socket.on("end", () => {
                             var coolProx = socksProxies[proxy.custId];
                             if(coolProx){
-                                coolProx.server[id] = null;
+                                coolProx.sockets[id] = null;
                                 scope.clients.to(cust.socketId).emit("add-job-data", { 
-                                    id: proxy.jobId.toString(),
+                                    id: proxy.jobId,
                                     connection_id: id,
                                 });
                             }  

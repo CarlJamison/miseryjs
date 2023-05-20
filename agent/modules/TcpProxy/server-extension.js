@@ -10,13 +10,17 @@ module.exports = {
             handle: (scope, message) => {
                 var cust = scope.customers.find(c => c.socketId == scope.socket.id);
                 if(!cust) return;
-                if(DEBUG) console.log("Recieving: " );
-                data = Buffer.from(message.output.data, 'base64');
+
                 var serverId = `${message.output.host}:${message.output.port}-${cust.id}`;
-                var connection = tcp_connections[serverId].connections[message.output.connectionId];
+                var server = tcp_connections[serverId];
+                if(!server) return false;
+
+                var connection = server.connections[message.output.connectionId];
                 if(connection){
+                    data = Buffer.from(message.output.data, 'base64');
+
                     connection.write(data);
-                    if(DEBUG) console.log(message.output.connectionId + " : " + data);
+                    if(DEBUG) console.log("Recieving: " + message.output.connectionId + " : " + data);
                 }
                 return false;
             }
@@ -37,7 +41,7 @@ module.exports = {
                     return false;  //Either not a valid server or already created
                 }
 
-                coolServer.jobId = msg.output.jobId;
+                coolServer.jobId = msg.output.jobId.toString();
                 coolServer.server = net.createServer(tcp_sock => {
                     var id = uuidv4();
                     coolServer.connections[id] = tcp_sock;
@@ -46,7 +50,7 @@ module.exports = {
                         if(DEBUG) console.log("Writing: " + id + " : " + data.toString());
 
                         scope.clients.to(cust.socketId).emit("add-job-data", { 
-                            id: coolServer.jobId.toString(),
+                            id: coolServer.jobId,
                             connection_id: id,
                             data: data.toString('base64') });
                     });
@@ -55,7 +59,7 @@ module.exports = {
                         if(tcp_connections[serverId]){
                             tcp_connections[serverId].connections[id] = null;
                             scope.clients.to(cust.socketId).emit("add-job-data", { 
-                                id: coolServer.jobId.toString(),
+                                id: coolServer.jobId,
                                 connection_id: id,
                             });
                         }  
