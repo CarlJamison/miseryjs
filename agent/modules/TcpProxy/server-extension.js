@@ -17,7 +17,7 @@ module.exports = {
 
                 var connection = server.connections[message.output.connectionId];
                 if(connection){
-                    data = Buffer.from(message.output.data, 'base64');
+                    var data = Buffer.from(message.output.data, 'base64');
 
                     connection.write(data);
                     if(DEBUG) console.log("Recieving: " + message.output.connectionId + " : " + data);
@@ -131,7 +131,7 @@ module.exports = {
         {
             //Create placeholder server
             name: 'get-tcp-servers',
-            handle: (scope, msg) => {
+            handle: (scope) => {
                 var connections = Object.keys(tcp_connections);
                 if(connections.length){
                     connections.forEach(c => scope.socket.emit('echo', `${c} ${tcp_connections[c].port}`));

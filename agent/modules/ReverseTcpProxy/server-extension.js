@@ -18,10 +18,10 @@ module.exports = {
                 var connection = server.connections[id];
                 
                 if(DEBUG) console.log("Recieving: " );
-                data = Buffer.from(message.output.data, 'base64');
+                var data = Buffer.from(message.output.data, 'base64');
 
                 if(!connection){
-                    var connection = new net.Socket();
+                    connection = new net.Socket();
                     connection.connect(server.targetPort, server.targetHost, () => {
                         connection.write(data);
                     });
@@ -129,7 +129,7 @@ module.exports = {
         {
             //Create placeholder server
             name: 'get-reverse-tcp-servers',
-            handle: (scope, msg) => {
+            handle: (scope) => {
                 var connections = Object.keys(reverse_tcp_connections);
                 if(connections.length){
                     connections.forEach(c => scope.socket.emit('echo', `${c} ${reverse_tcp_connections[c].port}`));

@@ -11,7 +11,7 @@ module.exports = {
                 var cust = scope.customers.find(c => c.socketId == scope.socket.id);
                 if(!cust) return;
                 if(DEBUG) console.log("Recieving: " );
-                data = Buffer.from(message.output.data, 'base64');
+                var data = Buffer.from(message.output.data, 'base64');
 
                 var proxy = socksProxies[cust.id];
                 if(!proxy) return false;
@@ -133,7 +133,7 @@ module.exports = {
         },
         {
             name: 'get-socks-servers',
-            handle: (scope, msg) => {
+            handle: (scope) => {
                 var connections = Object.keys(socksProxies);
                 if(connections.length){
                     connections.forEach(c => scope.socket.emit('echo', `${c} ${socksProxies[c].port}`));
