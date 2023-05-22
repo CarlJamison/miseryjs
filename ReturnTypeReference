@@ -9,6 +9,10 @@ Modules
 4:  Processes data
 5:  TCP Data
 6:  Initialize TCP Server
+7:  Socks Data
+8:  Initialize Socks Proxy
+9:  Reverse TCP Data
+10: Initialize TCP Server
 11: Key logger content
 
 

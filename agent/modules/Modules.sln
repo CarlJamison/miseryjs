@@ -33,6 +33,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Selfdelete", "Selfdelete\Se
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Socksproxy", "SocksProxy\Socksproxy.csproj", "{AD243567-DF64-4C67-9C32-253EB19E09B1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReverseTcpProxy", "ReverseTcpProxy\ReverseTcpProxy.csproj", "{4D0033FE-EE2B-4710-AC1D-AAB9B2EDA3CB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -99,6 +101,10 @@ Global
 		{AD243567-DF64-4C67-9C32-253EB19E09B1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AD243567-DF64-4C67-9C32-253EB19E09B1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AD243567-DF64-4C67-9C32-253EB19E09B1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4D0033FE-EE2B-4710-AC1D-AAB9B2EDA3CB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4D0033FE-EE2B-4710-AC1D-AAB9B2EDA3CB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4D0033FE-EE2B-4710-AC1D-AAB9B2EDA3CB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4D0033FE-EE2B-4710-AC1D-AAB9B2EDA3CB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

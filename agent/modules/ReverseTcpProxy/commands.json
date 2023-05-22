@@ -1,0 +1,17 @@
+{
+    "reverse-tcp-proxy" : {
+        "depends": "ReverseTcpProxy",
+        "agent_alias": ["extension create-reverse-tcp-server {*}"],
+        "summary": "Sets up a reverse TCP Proxy",
+        "usage": "reverse-tcp-proxy {target host} {target port} {server port}"
+    },
+    "get-reverse-tcp-proxies" : {
+        "agent_alias": ["extension get-reverse-tcp-servers"],
+        "summary": "Gets all existing Reverse TCP Proxies"
+    },
+    "close-reverse-tcp-proxy" : {
+        "agent_alias": ["extension close-reverse-tcp-server {*}"],
+        "summary": "Closes a Reverse TCP Proxy",
+        "usage": "close-reverse-tcp-proxy {server port}"
+    }
+}
