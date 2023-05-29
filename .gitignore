@@ -3,6 +3,7 @@ node_modules
 bin/
 obj/
 packages/
+file_storage
 *.dll
 *.pdb
 *.log

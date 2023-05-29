@@ -1,0 +1,13 @@
+{
+    "execute-assembly" : {
+        "agent_alias": ["load file_storage/{0}.dll", "run {0}"],
+        "summary": "Execute assembly uploaded to server storage",
+        "usage": "execute-assembly [name of file in server storage]"
+    },
+    "server-upload" : {
+        "agent_alias": ["extension server-upload {0} {9}"],
+        "summary": "Upload file to server",
+        "usage": "server-upload [name of file]",
+        "transforms": [ "file_select" ]
+    }
+}
