@@ -29,6 +29,7 @@
         var commands = {};
         var transforms = {};
         var terminal = null;
+        var partyMode = true;
 
         var tabs = $( "#tabs" ).tabs();
         tabs.on( "click", "span.ui-icon-close", function() {
@@ -110,6 +111,10 @@
                     if(noConnection()) return;
                     socket.emit('load', {id: currentId, fileName: message});
                 },
+                "toggle-party-mode": message => {
+                    partyMode = !partyMode;
+                    terminal.echo(`Party mode ${partyMode ? "" : "de"}activated.  Proceed with caution`);
+                },
                 extension: (...args) => {
                     if(noConnection()) return;
                     socket.emit('run-server-extension', {
@@ -171,7 +176,9 @@
 
             socket.on("connections", connections => {
 
-                if(cCount < connections.length){
+                if(cCount < connections.length && partyMode){
+                    const aud = new Audio("/birthday.mp3");
+                    aud.play();
                     const jsConfetti = new JSConfetti();
                     jsConfetti.addConfetti();
                 }

@@ -39,7 +39,7 @@ module.exports = {
 
                 var buffer = Buffer.from(msg.args[1], 'base64');
 
-                fs.writeFile(`${file_storage}/${msg.args[0]}`, buffer, (err) => {
+                fs.writeFile(`${storage}/${msg.args[0]}`, buffer, (err) => {
                     scope.socket.emit('echo', err ? err.toString() : 'File uploaded');
                 });
             }
