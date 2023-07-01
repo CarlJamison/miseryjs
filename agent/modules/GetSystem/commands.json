@@ -1,0 +1,12 @@
+{"getsystem" : {
+    "depends": "GetSystem",
+    "agent_alias": ["run_inline GetSystem elevate {*}"],
+    "summary": "Performs EFS named pipe impersonation to elevate to SYSTEM or run a command",
+    "usage": "getsystem [pipename]"
+},
+"system_run" : {
+    "depends": "GetSystem",
+    "agent_alias": ["run GetSystem {*}"],
+    "summary": "Impersonate SYSTEM using EFS and run a command. Optionally, specify a pipe name",
+    "usage": "system_run \"cmd [args]\" [pipename]"
+}}
