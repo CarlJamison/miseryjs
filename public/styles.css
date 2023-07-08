@@ -8,6 +8,7 @@
 .ui-tabs-panel {
     flex: 100;
     overflow-x: scroll;
+    overflow-wrap: anywhere;
 }
 table {
     font-family: arial, sans-serif;

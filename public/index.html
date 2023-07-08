@@ -31,6 +31,9 @@
         var terminal = null;
         var partyMode = true;
 
+        var colors = ["maroon", "purple", "fuchsia", "green", "lime", "navy", "teal", "darkorange", "darkslateblue", "darksalmon", "darkseagreen"];
+        var colorIds = [];
+
         var tabs = $( "#tabs" ).tabs();
         tabs.on( "click", "span.ui-icon-close", function() {
             var panelId = $( this ).closest( "li" ).remove().attr( "aria-controls" );
@@ -190,7 +193,23 @@
                     var contentString = Object.keys(element).reduce((cs, p) =>
                         cs + `<div class="connection-info"><span>${p}: </span>${element[p]}</div>`, "");
                     
-                    $("div.connections").append(`<div class="connection-button" onclick="connectionChange('${element.id}')" id="${element.id}">${contentString}</div>`);
+                    var colorIndex = colorIds.findIndex(id => id == element.id);
+
+                    var cc = 0
+                    while(colorIndex < 0){
+                        if(cc >= colors.length){
+                            colors.push( '#' + Math.floor(Math.random()*16777215).toString(16))
+                        }
+
+                        if(!colorIds[cc]){
+                            colorIndex = cc;
+                            colorIds[cc] = element.id
+                        }
+
+                        cc++;
+                    }
+
+                    $("div.connections").append(`<div style="border: ${colors[colorIndex]} solid 4px" class="connection-button" onclick="connectionChange('${element.id}')" id="${element.id}">${contentString}</div>`);
                 });
 
                 if(currentId)  $(`#${currentId}`).addClass("current-connection");
@@ -200,7 +219,8 @@
         function connectionChange(id){
             if(currentId && currentId.length) $(`#${currentId}`).removeClass("current-connection");
             currentId = id;
-            terminal.set_prompt(currentId + "[[gb;red;black]>] ");
+            var color = colors[colorIds.findIndex(id => id == currentId)];
+            terminal.set_prompt(`[[gb;${color};black]${currentId}>] `);
             $(`#${currentId}`).addClass("current-connection");
         }
         </script>
