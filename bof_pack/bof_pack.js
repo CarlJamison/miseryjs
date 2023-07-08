@@ -1,4 +1,4 @@
-const struct = require('struct');
+const struct = require('python-struct');
 
 function bof_pack(fstring, args) {
   // Most code taken from: https://github.com/trustedsec/COFFLoader/blob/main/beacon_generate.py
@@ -13,11 +13,12 @@ function bof_pack(fstring, args) {
   // z       | zero-terminated+encoded string        | BeaconDataExtract
   // Z       | zero-terminated wide-char string      | (wchar_t *)BeaconDataExtract
 
-   buffer = [];
-   length = 0;
+  var buf = null; // TODO: Fix why can't i make a dynamicaly sized buffer....
+  var size = 0;
 
   function addshort(s) {
-
+     size += 2;
+     return struct.pack("<h", s)
   }
 
   function addint(i) {
@@ -39,27 +40,43 @@ function bof_pack(fstring, args) {
   var test = "test";
   console.log(`starting up! ${test}`);
 
-  args.forEach(e => {
-    console.log(e);
-  });
+  for(var i = 0; i < fstring.length; i++)
+  {
+    console.log(fstring[i]);
+    console.log(args[i]);
+    if(fstring[i] == "b")
+    {
+      packed = addbinary(args[i]);
+    }
+    else if(fstring[i] == "i")
+    {
 
+    }
+    else if(fstring[i] == "s")
+    {
+      packed = addshort(args[i]);
+    }
+    else if(fstring[i] == "z")
+    {
+
+    }
+    else if(fstring[i] == "Z")
+    {
+
+    }
+    else
+    {
+      console.log(`Invalid character in fstring: ${fstring[i]}`);
+      return [];
+    }
+    buf = buf ? Buffer.concat([buf, packed], buf.length+packed.length) : packed; // unreadible
+  }
+  return buf;
 }
 
-fstring = "iii";
-args = [2, 3, 4];
-bof_pack(fstring, args);
-
-
-var test = struct.Struct().doublele('length').charsnt('dir',3).word8('recurse');
-
-var proxy = test.fields;
-test.length = 14;
-test.dir = 'C:\\';
-test.recurse = 0;
-
-test.allocate();
-
-var buf = test.buffer();
+fstring = "ssszzz";
+args = [2, 3, 4, "hello", "world", "misery"];
+buf = bof_pack(fstring, args);
 
 console.log(buf);
 
