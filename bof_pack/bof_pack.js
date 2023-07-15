@@ -13,28 +13,45 @@ function bof_pack(fstring, args) {
   // z       | zero-terminated+encoded string        | BeaconDataExtract
   // Z       | zero-terminated wide-char string      | (wchar_t *)BeaconDataExtract
 
-  var buf = null; // TODO: Fix why can't i make a dynamicaly sized buffer....
+  var buf = null;
   var size = 0;
 
   function addshort(s) {
      size += 2;
-     return struct.pack("<h", s)
+     return struct.pack("<h", s);
   }
 
   function addint(i) {
-
+    size += 4;
+    return struct.pack("<i", i);
   }
 
   function addstr(s) {
-
+    const textEncoder = new TextEncoder("utf-8");
+    s = textEncoder.encode(s);
+    var s_length = s.length;
+    console.log(typeof(s));
+    s.unshift(s_length);
+    console.log(s);
+    var fmt = `<L${s_length+1}s`;
+    console.log(fmt)
+    size += struct.sizeOf(fmt);
+    return struct.pack(fmt, s)
   }
 
   function addWstr(s) {
-
+    const textEncoder = new TextEncoder("utf-16_le");
+    s = textEncoder.encode(s);
+    var fmt = `<L${s.length+2}s`;
+    console.log(fmt)
+    size += struct.sizeOf(fmt);
+    return struct.pack(fmt, s.length+2, s)
   }
 
   function addbinary(b) {
-
+    var fmt = `<L${b.length+1}s`;
+    size += struct.sizeOf(fmt);
+    return struct.pack(fmt, b.length+1, b)
   }
 
   var test = "test";
@@ -50,7 +67,7 @@ function bof_pack(fstring, args) {
     }
     else if(fstring[i] == "i")
     {
-
+      packed = addint(args[i]);
     }
     else if(fstring[i] == "s")
     {
@@ -58,11 +75,11 @@ function bof_pack(fstring, args) {
     }
     else if(fstring[i] == "z")
     {
-
+      packed = addstr(args[i]);
     }
     else if(fstring[i] == "Z")
     {
-
+      packed = addWstr(args[i]);
     }
     else
     {
