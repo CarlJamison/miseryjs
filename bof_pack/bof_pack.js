@@ -28,15 +28,17 @@ function bof_pack(fstring, args) {
 
   function addstr(s) {
     const textEncoder = new TextEncoder("utf-8");
-    s = textEncoder.encode(s);
+    var s = Array.from(textEncoder.encode(s));
     var s_length = s.length;
     console.log(typeof(s));
-    s.unshift(s_length);
+    s.unshift();
+    s.push(0x00);
+    s = Uint8Array.from(s);
     console.log(s);
-    var fmt = `<L${s_length+1}s`;
+    var fmt = `<${s_length}s`;
     console.log(fmt)
     size += struct.sizeOf(fmt);
-    return struct.pack(fmt, s)
+    return struct.pack(fmt, s.toString());
   }
 
   function addWstr(s) {
@@ -95,7 +97,7 @@ fstring = "ssszzz";
 args = [2, 3, 4, "hello", "world", "misery"];
 buf = bof_pack(fstring, args);
 
-console.log(buf);
+console.log(buf.toString('hex'));
 
 
 
