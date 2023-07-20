@@ -27,18 +27,12 @@ function bof_pack(fstring, args) {
   }
 
   function addstr(s) {
-    const textEncoder = new TextEncoder("utf-8");
-    var s = Array.from(textEncoder.encode(s));
-    var s_length = s.length;
-    console.log(typeof(s));
-    s.unshift();
-    s.push(0x00);
-    s = Uint8Array.from(s);
-    console.log(s);
-    var fmt = `<${s_length}s`;
-    console.log(fmt)
+    s += String.fromCharCode(0);
+
+    var fmt = `<L${s.length}s`;
+
     size += struct.sizeOf(fmt);
-    return struct.pack(fmt, s.toString());
+    return struct.pack(fmt, s.length, s);
   }
 
   function addWstr(s) {
