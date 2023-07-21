@@ -1,6 +1,6 @@
 {
     "socks-proxy" : {
-        "depends": "Socksproxy",
+        "depends": "SocksProxy",
         "agent_alias": ["extension create-socks-server {*}"],
         "summary": "Sets up a SOCKS Proxy",
         "usage": "socks-proxy {server port}"

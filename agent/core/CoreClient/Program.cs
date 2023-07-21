@@ -36,7 +36,9 @@ namespace CoreClient
             {
                 Go();
             }
-            while (true) { };
+            while (true) {
+                Thread.Sleep(100);
+            };
         }
         static async void Go(string home = "http://localHost:8888")
         {

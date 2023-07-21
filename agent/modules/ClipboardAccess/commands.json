@@ -1,0 +1,5 @@
+{"get-clipboard" : {
+    "depends": "ClipboardAccess",
+    "agent_alias": ["run ClipboardAccess"],
+    "summary": "Get the current clipboard"
+}}
