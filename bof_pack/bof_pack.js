@@ -1,4 +1,5 @@
 const struct = require('python-struct');
+const fs = require('fs')
 
 function bof_pack(fstring, args) {
   // Most code taken from: https://github.com/trustedsec/COFFLoader/blob/main/beacon_generate.py
@@ -27,39 +28,48 @@ function bof_pack(fstring, args) {
   }
 
   function addstr(s) {
-    s += String.fromCharCode(0);
-
+    s += String.fromCharCode(0x00);
     var fmt = `<L${s.length}s`;
-
     size += struct.sizeOf(fmt);
     return struct.pack(fmt, s.length, s);
   }
 
   function addWstr(s) {
-    const textEncoder = new TextEncoder("utf-16_le");
-    s = textEncoder.encode(s);
-    var fmt = `<L${s.length+2}s`;
-    console.log(fmt)
+    //const textEncoder = new TextEncoder("utf-16_le");
+    s = Buffer.from(s, "utf16le")
+    s += String.fromCharCode(0x00, 0x00);
+    var fmt = `<L${s.length}s`;
     size += struct.sizeOf(fmt);
-    return struct.pack(fmt, s.length+2, s)
+    return struct.pack(fmt, s.length, s);
   }
 
   function addbinary(b) {
-    var fmt = `<L${b.length+1}s`;
+    b += String.fromCharCode(0x00);
+    var fmt = `<L${b.length}s`;
     size += struct.sizeOf(fmt);
-    return struct.pack(fmt, b.length+1, b)
+    return struct.pack(fmt, b.length, b);
   }
 
-  var test = "test";
-  console.log(`starting up! ${test}`);
+  if(fstring.length != args.length)
+  {
+    console.log(`Format string length must be the same as argument length: fstring:${fstring.length}, args:${args.length}`);
+    return [];
+  }
 
   for(var i = 0; i < fstring.length; i++)
   {
-    console.log(fstring[i]);
-    console.log(args[i]);
     if(fstring[i] == "b")
     {
-      packed = addbinary(args[i]);
+      try
+      {
+        binary = fs.readFileSync(args[i]);
+      }
+      catch
+      {
+        console.log(`Could not read contents of binary file: ${args[i]}`);
+        return [];
+      }
+      packed = addbinary(binary);
     }
     else if(fstring[i] == "i")
     {
@@ -82,13 +92,15 @@ function bof_pack(fstring, args) {
       console.log(`Invalid character in fstring: ${fstring[i]}`);
       return [];
     }
-    buf = buf ? Buffer.concat([buf, packed], buf.length+packed.length) : packed; // unreadible
+    buf = buf ? Buffer.concat([buf, packed], buf.length+packed.length) : packed;
   }
-  return buf;
+  return Buffer.concat([struct.pack("<L", size), buf]); // Prepend length of the whole buffer
 }
 
-fstring = "ssszzz";
-args = [2, 3, 4, "hello", "world", "misery"];
+fstring = "sizZb";
+args = [2, 333333333, "hello", "WORLD", "bof_pack.js"];
+
+console.log(`Running bof_pack() with following arguments:\n${fstring} ${args.join(' ')}\n`);
 buf = bof_pack(fstring, args);
 
 console.log(buf.toString('hex'));
