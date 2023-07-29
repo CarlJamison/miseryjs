@@ -75,7 +75,9 @@
                 alias.agent_alias.forEach(com => {
                     com = com.replace(/\{.+?\}/gi, p => {
                         if(p.length == 3){
-                            return p[1] == "*" ? args.join(" ") : args[+p[1]];
+                            return p[1] == "*" ? 
+                                args.filter(a => !new RegExp('^{f:\\d+}').test(a)).join(" ") : 
+                                args[+p[1]];
                         }else if(p.length == 4){
                             if(p[1] == ":"){
                                 return args.slice(0, +p[2] + 1).join(" ");

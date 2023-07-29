@@ -35,7 +35,6 @@ module.exports = (fstring, args) => {
   }
 
   function addWstr(s) {
-    //const textEncoder = new TextEncoder("utf-16_le");
     s = Buffer.from(s, "utf16le")
     s += String.fromCharCode(0x00, 0x00);
     var fmt = `<L${s.length}s`;
@@ -52,23 +51,14 @@ module.exports = (fstring, args) => {
 
   if(fstring.length != args.length)
   {
-    console.log(`Format string length must be the same as argument length: fstring:${fstring.length}, args:${args.length}`);
-    return null;
+    throw new Error(`Format string length must be the same as argument length: fstring:${fstring.length}, args:${args.length}`);
   }
 
   for(var i = 0; i < fstring.length; i++)
   {
     if(fstring[i] == "b")
     {
-      try
-      {
-        binary = fs.readFileSync(args[i]);
-      }
-      catch
-      {
-        console.log(`Could not read contents of binary file: ${args[i]}`);
-        return null;
-      }
+      binary = fs.readFileSync(args[i]);
       packed = addbinary(binary);
     }
     else if(fstring[i] == "i")
@@ -89,8 +79,7 @@ module.exports = (fstring, args) => {
     }
     else
     {
-      console.log(`Invalid character in fstring: ${fstring[i]}`);
-      return null;
+      throw new Error(`Invalid character in fstring: ${fstring[i]}`);
     }
     buf = buf ? Buffer.concat([buf, packed], buf.length+packed.length) : packed;
   }
