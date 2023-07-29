@@ -1,7 +1,7 @@
 const struct = require('python-struct');
 const fs = require('fs')
 
-function bof_pack(fstring, args) {
+module.exports = (fstring, args) => {
   // Most code taken from: https://github.com/trustedsec/COFFLoader/blob/main/beacon_generate.py
   // Emulates the native Cobalt Strike bof_pack() function.
   // Documented here: https://hstechdocs.helpsystems.com/manuals/cobaltstrike/current/userguide/content/topics_aggressor-scripts/as-resources_functions.htm#bof_pack
@@ -53,7 +53,7 @@ function bof_pack(fstring, args) {
   if(fstring.length != args.length)
   {
     console.log(`Format string length must be the same as argument length: fstring:${fstring.length}, args:${args.length}`);
-    return [];
+    return null;
   }
 
   for(var i = 0; i < fstring.length; i++)
@@ -67,7 +67,7 @@ function bof_pack(fstring, args) {
       catch
       {
         console.log(`Could not read contents of binary file: ${args[i]}`);
-        return [];
+        return null;
       }
       packed = addbinary(binary);
     }
@@ -90,30 +90,9 @@ function bof_pack(fstring, args) {
     else
     {
       console.log(`Invalid character in fstring: ${fstring[i]}`);
-      return [];
+      return null;
     }
     buf = buf ? Buffer.concat([buf, packed], buf.length+packed.length) : packed;
   }
   return Buffer.concat([struct.pack("<L", size), buf]); // Prepend length of the whole buffer
 }
-
-fstring = "sizZb";
-args = [2, 333333333, "hello", "WORLD", "bof_pack.js"];
-
-console.log(`Running bof_pack() with following arguments:\n${fstring} ${args.join(' ')}\n`);
-buf = bof_pack(fstring, args);
-
-console.log(buf.toString('hex'));
-
-
-
-
-
-
-
-
-
-
-
-
-

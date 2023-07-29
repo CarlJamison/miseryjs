@@ -1,7 +1,7 @@
 {
   "execute_bof": {
     "depends": "Coffloader",
-    "agent_alias": [ "run Coffloader {9} {*}" ],
+    "agent_alias": [ "extension coffloader {9} {*}" ],
     "summary": "Executes a Beacon Object File on the implant",
     "usage": "execute_bof <object file> [<fstring> <argument> [argument] ...]",
     "transforms": [ "file_select" ]
