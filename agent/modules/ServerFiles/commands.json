@@ -10,7 +10,7 @@
         "usage": "server-upload [name of file]",
         "transforms": [ "file_select" ]
     },
-    "get-server-storage" : {
+    "refresh-server-storage" : {
         "agent_alias": ["extension current-server-storage"],
         "summary": "Gets the files currently stored on the server",
         "usage": ""

@@ -50,6 +50,12 @@ controllers.on('connection', (socket) => {
     return;
   }
 
+  extensions.forEach(x => {
+    if(x.onControllerConnection){
+      x.onControllerConnection({customers, clients, socket, controllers});
+    }
+  });
+
   controllers.emit('connections', customers);
 
   socket.on('echo', msg => {
@@ -135,7 +141,7 @@ controllers.on('connection', (socket) => {
       if(x.listeners){
         var extMethod = x.listeners.find(l => l.name == msg.name);
         if(extMethod){
-          extMethod.handle({customers, clients, socket}, msg);
+          extMethod.handle({customers, clients, socket, controllers}, msg);
         }
       }
     })

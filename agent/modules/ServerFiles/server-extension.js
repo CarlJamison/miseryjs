@@ -3,7 +3,12 @@ const path = require('path');
 const storage = "file_storage"
 const { v4: uuidv4 } = require('uuid');
 
+if(!fs.existsSync(storage)){
+    fs.mkdirSync(storage);
+}
+
 module.exports = {
+    onControllerConnection: scope => emitUpdate(scope),
     handlers: [
         {   
             returnType: 1,
@@ -13,17 +18,11 @@ module.exports = {
 
                 var buffer = Buffer.from(message.output, 'base64');
                 
-                if(!fs.existsSync(storage)){
-                    fs.mkdirSync(storage);
-                }
-                
                 if(!fs.existsSync(`${storage}/${cust.id}`)){
                     fs.mkdirSync(`${storage}/${cust.id}`);
                 }
 
-                fs.writeFile(`${storage}/${cust.id}/${uuidv4()}`, buffer, (err) => {
-                    scope.controllers.emit('echo', err ? err.toString() : 'File added to server storage');
-                });
+                fs.writeFile(`${storage}/${cust.id}/${uuidv4()}`, buffer, () => emitUpdate(scope));
                 
                 return true;
             }
@@ -33,30 +32,38 @@ module.exports = {
         {
             name: 'server-upload',
             handle: (scope, msg) => {
-                if(!fs.existsSync(storage)){
-                    fs.mkdirSync(storage);
-                }
 
                 var buffer = Buffer.from(msg.args[1], 'base64');
 
                 fs.writeFile(`${storage}/${msg.args[0]}`, buffer, (err) => {
                     scope.socket.emit('echo', err ? err.toString() : 'File uploaded');
+                    emitUpdate(scope);
                 });
             }
         },
         {
             name: 'current-server-storage',
-            handle: (scope, msg) => {
-                if(!fs.existsSync(storage)){
-                    fs.mkdirSync(storage);
-                }
-
-                var result = dirTree(storage)
-                scope.socket.emit('echo', dirTreeString(storage));
-            }
+            handle: (scope, msg) => emitUpdate(scope)
         }
+
+        //TODO
+        //Delete
+        //Create folder
+        //download
+        //Move
+        //Copy
+        //rename
+        //Redo client file download
+        //Redo Server upload
     ]
 
+}
+
+function emitUpdate(scope){
+    scope.controllers.emit('echo', {
+        returnType: 12,
+        output: dirTree(storage)
+    });
 }
 
 function dirTree(filename) {
@@ -68,26 +75,10 @@ function dirTree(filename) {
 
     if (stats.isDirectory()) {
         info.type = "folder";
-        info.children = fs.readdirSync(filename).map(function(child) {
-            return dirTree(filename + '/' + child);
-        });
+        info.children = fs.readdirSync(filename).map(child => dirTree(`${filename}/${child}`));
     } else {
         info.type = "file";
     }
 
     return info;
-}
-
-function dirTreeString(filename, out = "", indent = "") {
-    var stats = fs.lstatSync(filename);
-
-    var out = indent + path.basename(filename) + "\n";
-
-    if (stats.isDirectory()) {
-        fs.readdirSync(filename).map(function(child) {
-            out += dirTreeString(filename + '/' + child, out, indent + "\t");
-        });
-    }
-
-    return out;
 }
