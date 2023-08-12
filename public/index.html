@@ -4,14 +4,14 @@
 <title>MiseryJS</title>
 <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
 <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
-<link rel="stylesheet" href="//code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
 <script src="https://unpkg.com/jquery.terminal/js/jquery.terminal.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/js-confetti@latest/dist/js-confetti.browser.js"></script>
-<link rel="stylesheet" href="https://unpkg.com/jquery.terminal/css/jquery.terminal.min.css"/>
-<link rel="icon" href="/favicon.png">
 <script src="/socket.io/socket.io.js"></script>
 <script src="/response-handling.js"></script>
-<link rel="stylesheet" href="/styles.css">
+<link rel="stylesheet" href="//code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+<link rel="stylesheet" href="https://unpkg.com/jquery.terminal/css/jquery.terminal.min.css"/>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0" /><link rel="stylesheet" href="/styles.css">
+<link rel="icon" href="/favicon.png">
 </head>
 <body style="display: flex; height: 100%; margin: 0;">
     <input type="file" id="file" name="file" multiple style="display:none">
@@ -165,6 +165,11 @@
                     var id = +a.replace('{f:', '').replace('}', '');
                     a = fileTexts[id];
                     fileTexts[id] = null;
+                }
+                if((new RegExp('^{fn:\\d+}')).test(a)){
+                    var id = +a.replace('{fn:', '').replace('}', '');
+                    a = fileNames[id];
+                    fileNames[id] = null;
                 }
                 return a;
             });
