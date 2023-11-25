@@ -11,13 +11,13 @@ var types = {
     }
   },
   1: message => { //Download
-    const linkSource = `data:application/octet-stream;base64,${message.output}`
+    const linkSource = `data:application/octet-stream;base64,${message.output.data}`
     const downloadLink = document.createElement('a');
     document.body.appendChild(downloadLink);
 
     downloadLink.href = linkSource;
     downloadLink.target = '_self';
-    downloadLink.download = currentId + Math.floor(Math.random() * 1000);
+    downloadLink.download = message.output.name;
     downloadLink.click(); 
   },
   2: message => { //Image
@@ -62,7 +62,7 @@ function createTab(label, content){
   li = $( tabTemplate.replace( /#\{href\}/g, "#" + id ).replace( /#\{label\}/g, label ) );
 
   tabs.find( ".ui-tabs-nav" ).append( li );
-  tabs.prepend( "<div id='" + id + "'><p>" + content + "</p></div>" );
+  tabs.prepend( "<div id='" + id + "'>" + content + "</div>" );
   tabs.tabs( "refresh" );
 
   tabCounter++;

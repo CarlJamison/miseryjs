@@ -5,9 +5,9 @@
         "usage": "execute-assembly [name of file in server storage]"
     },
     "server-upload" : {
-        "agent_alias": ["extension server-upload {9} {8}"],
+        "agent_alias": ["extension server-upload {9} {8} {0}"],
         "summary": "Upload file to server",
-        "usage": "server-upload [name of file]",
+        "usage": "server-upload [name/location of file]",
         "transforms": [ "file_select" ]
     },
     "refresh-server-storage" : {

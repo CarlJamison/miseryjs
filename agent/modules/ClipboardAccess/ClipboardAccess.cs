@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Threading;
-using System.Windows;
-using System.Windows.Forms;
+using Clipboard = System.Windows.Forms.Clipboard;
 
 namespace ClipboardAccess
 {

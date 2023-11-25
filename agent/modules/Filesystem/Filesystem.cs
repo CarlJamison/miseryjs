@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.IO;
+using System.Text.Json;
 
 // Return codes (incomplete):
 // 0 = text data
@@ -593,7 +594,13 @@ namespace Filesystem
             try
             {
                 byte[] filecontent = File.ReadAllBytes(filepath);
-                Console.WriteLine(Convert.ToBase64String(filecontent));
+
+                Console.WriteLine(JsonSerializer.Serialize(new
+                {
+                    name = filepath.Split('/').Last(),
+                    data = Convert.ToBase64String(filecontent)
+                }));
+
                 return 1; // returnType 1 = download
             }
             catch (DirectoryNotFoundException)
