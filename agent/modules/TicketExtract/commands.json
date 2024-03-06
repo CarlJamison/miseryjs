@@ -1,0 +1,6 @@
+{"kerberos_ticket_extract" : {
+    "depends": "TicketExtract",
+    "agent_alias": ["run TicketExtract"],
+    "summary": "Extracts Kerberos tickets from host. Must be admin",
+    "usage": "kerberos_ticket_extract"
+}}
